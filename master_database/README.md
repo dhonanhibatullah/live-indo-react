@@ -10,9 +10,9 @@ guidance.
 
 ## Setup
 
-You need Rust 1.94 or newer, PostgreSQL with PostGIS installed on the server,
-and a pre-created target database. Live tests
-have been verified with PostgreSQL 17 and PostGIS 3.5.
+You need Rust 1.94 or newer, PostgreSQL with PostGIS and pg_trgm available on the
+server, and a pre-created target database. Live tests have been verified with
+PostgreSQL 17 and PostGIS 3.5.
 
 Run commands from this directory:
 
@@ -47,9 +47,10 @@ cargo run --release --locked
 
 The executable connects, applies pending SQL migrations, verifies the schema,
 seeds provinces followed by cities, and closes the pool. The configured role
-needs permission to create PostGIS and schema objects, read and insert reference
-and history rows, and use identity sequences. The target database must already
-exist; PostGIS must be installed on its server.
+needs permission to create the PostGIS/pg_trgm extensions and schema objects,
+read and insert reference and history rows, and use identity sequences. The target database must already
+exist; both extensions must be available on its server. Name searches on topics,
+provinces, and cities have GIN trigram indexes.
 
 SQL files are read from the working directory's `migrations/` folder. SQLx records
 schema versions and checksums in `_sqlx_migrations`, locks migration execution,
@@ -81,7 +82,7 @@ refers to the container itself.
 The image includes the schema files and a single compiled executable. Its
 entrypoint runs migrations first, then seeds, and exits; a migration failure stops
 the container before seeding. Reruns check both schema and seed history. PostgreSQL
-with PostGIS must be running separately, and the configured role must have both
+with PostGIS and pg_trgm available must be running separately, and the configured role must have both
 migration and seed privileges. No database server is included in the image.
 
 The runtime runs as UID/GID `10001:10001`. Credentials are supplied at runtime;

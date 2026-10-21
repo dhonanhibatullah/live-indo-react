@@ -86,8 +86,10 @@ existing simple console helpers (INFO to stdout, ERROR to stderr); console write
 failures stay silent. No logging framework is required.
 
 Keep SQL migrations ordered and paired with reverse operations. Preserve database
-constraints, stable identifiers, foreign keys, and GiST boundary indexes. Update
-the ERD alongside schema changes. Do not regenerate migrations blindly from DBML.
+constraints, stable identifiers, foreign keys, GiST boundary indexes, and GIN
+trigram name indexes. Enable PostGIS and pg_trgm before creating their indexes.
+Update the ERD alongside schema changes. Do not regenerate migrations blindly
+from DBML.
 
 ## Verification
 

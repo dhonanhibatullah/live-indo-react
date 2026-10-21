@@ -22,6 +22,9 @@ CREATE TABLE provinces (
 
 -- Codes remain reserved after soft deletion.
 CREATE UNIQUE INDEX uq_provinces_kemendagri_code ON provinces (kemendagri_code);
+CREATE INDEX idx_provinces_deleted_at ON provinces (deleted_at);
+CREATE INDEX idx_provinces_is_active ON provinces (is_active);
+CREATE INDEX idx_provinces_name_trgm ON provinces USING GIN (name gin_trgm_ops);
 CREATE INDEX idx_provinces_boundary_gist ON provinces USING GIST (boundary);
 
 COMMENT ON TABLE provinces IS 'Indonesian province reference data with canonical WGS84 boundaries.';

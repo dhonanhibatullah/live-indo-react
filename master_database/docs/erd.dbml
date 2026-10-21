@@ -25,8 +25,8 @@ seeds before city/regency seeds. Each file has its own version/history entry;
 repaired_region_codes lists only records contained in that file. No initial topic
 catalog is assumed.
 
-PostGIS must be installed on the PostgreSQL server. Future SQL migrations must run
-CREATE EXTENSION IF NOT EXISTS postgis; before creating the geographic tables.
+PostGIS and pg_trgm must be available on the PostgreSQL server. The extension
+migration enables both before creating tables and indexes.
 This DBML is a design document, not an executable migration.
 The DBML CLI may export the custom geometry type as a quoted identifier containing
 its parameters. Migrations must use the unquoted SQL type
@@ -45,11 +45,16 @@ administrative capital. Simplify geometry only for map delivery; retain canonica
 boundaries here. Validate city/province code and geographic consistency at import;
 province_id is the authoritative administrative relationship, not a spatial guess.
 
-DBML's portable index syntax does not express GiST. Future migrations must add:
+DBML's portable index syntax does not express GiST or GIN operator classes.
+The SQL migrations define these additional indexes:
 CREATE INDEX idx_provinces_boundary_gist ON provinces USING GIST (boundary);
 CREATE INDEX idx_cities_boundary_gist ON cities USING GIST (boundary);
-These are additional to the B-tree indexes declared below. Do not substitute
-B-tree indexes on boundary columns when exporting this diagram to SQL.
+CREATE INDEX idx_topics_name_trgm ON topics USING GIN (name gin_trgm_ops);
+CREATE INDEX idx_provinces_name_trgm ON provinces USING GIN (name gin_trgm_ops);
+CREATE INDEX idx_cities_name_trgm ON cities USING GIN (name gin_trgm_ops);
+These are additional to the B-tree indexes declared below. Trigram indexes support
+name search with LIKE/ILIKE and trigram similarity operators. Do not substitute
+B-tree indexes for these spatial or trigram indexes when exporting to SQL.
 
 IDs are stable internal references; codes and slugs remain reserved after soft
 deletion. Retire regions/topics with is_active or deleted_at rather than removing
@@ -102,6 +107,8 @@ Table topics [headercolor: #F59E0B] {
     deleted_at  timestamptz
 
     Indexes {
+        deleted_at [name: 'idx_topics_deleted_at']
+        is_active [name: 'idx_topics_is_active']
         slug [unique, name: 'uq_topics_slug']
     }
 
@@ -126,6 +133,8 @@ Table provinces [headercolor: #059669] {
     deleted_at              timestamptz
 
     Indexes {
+        deleted_at [name: 'idx_provinces_deleted_at']
+        is_active [name: 'idx_provinces_is_active']
         kemendagri_code [unique, name: 'uq_provinces_kemendagri_code']
     }
 
@@ -154,6 +163,8 @@ Table cities [headercolor: #2563EB] {
     deleted_at              timestamptz
 
     Indexes {
+        deleted_at [name: 'idx_cities_deleted_at']
+        is_active [name: 'idx_cities_is_active']
         kemendagri_code [unique, name: 'uq_cities_kemendagri_code']
         (province_id, kind, name, id) [name: 'idx_cities_province_kind_name', note: 'Parent lookup and ordered city/regency listing; province_id is the leading FK column.']
     }

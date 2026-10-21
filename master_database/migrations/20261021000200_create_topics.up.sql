@@ -16,6 +16,9 @@ CREATE TABLE topics (
 
 -- Slugs remain reserved after soft deletion.
 CREATE UNIQUE INDEX uq_topics_slug ON topics (slug);
+CREATE INDEX idx_topics_deleted_at ON topics (deleted_at);
+CREATE INDEX idx_topics_is_active ON topics (is_active);
+CREATE INDEX idx_topics_name_trgm ON topics USING GIN (name gin_trgm_ops);
 
 COMMENT ON TABLE topics IS
     'Nationwide reaction subjects. Disable or soft-delete to close participation while retaining history.';

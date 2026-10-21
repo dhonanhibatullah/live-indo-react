@@ -29,6 +29,9 @@ CREATE TABLE cities (
 
 -- Codes remain reserved after soft deletion. The parent ID leads the listing index.
 CREATE UNIQUE INDEX uq_cities_kemendagri_code ON cities (kemendagri_code);
+CREATE INDEX idx_cities_deleted_at ON cities (deleted_at);
+CREATE INDEX idx_cities_is_active ON cities (is_active);
+CREATE INDEX idx_cities_name_trgm ON cities USING GIN (name gin_trgm_ops);
 CREATE INDEX idx_cities_province_kind_name ON cities (province_id, kind, name, id);
 CREATE INDEX idx_cities_boundary_gist ON cities USING GIST (boundary);
 
