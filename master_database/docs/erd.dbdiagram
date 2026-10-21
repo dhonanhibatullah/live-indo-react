@@ -10,8 +10,8 @@
       {
         "name": "topics",
         "schemaName": "public",
-        "x": 254.5532479874776,
-        "y": -48.63831199686939
+        "x": -297.8120383718379,
+        "y": 386
       },
       {
         "name": "provinces",
@@ -22,8 +22,14 @@
       {
         "name": "cities",
         "schemaName": "public",
-        "x": 594.240234375,
-        "y": 386
+        "x": 478.2435242395436,
+        "y": 404.41217621197734
+      },
+      {
+        "name": "seed_history",
+        "schemaName": "public",
+        "x": 19.364870484790856,
+        "y": 151.9325392110267
       }
     ],
     "tableGroupCollapseStates": [],

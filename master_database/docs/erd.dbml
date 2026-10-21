@@ -5,6 +5,25 @@ Master reference data: nationwide reaction topics and Indonesian administrative
 regions. The cities table includes both kota and kabupaten. Topics are independent
 of geography; reactions associate a topic with a location in the reaction database.
 No cross-database foreign keys or reaction/heat aggregates are defined here.
+seed_history tracks ordered JSON seed versions after schema migrations complete;
+its table is created after the PostGIS extension and before the master tables.
+
+Seed files use a version/name/srid/source/records envelope. The numeric version
+must match the filename prefix. Each geographic record supplies its master fields,
+a GeoJSON MultiPolygon boundary, attribution, and an optional boundary reference
+date. Cities supply province_kemendagri_code; the importer resolves province_id
+from the existing provinces table rather than assuming generated IDs.
+The source object records the pinned upstream revision, raw source SHA-256,
+generation metadata, license, and any topology repairs. source.sha256 hashes the
+upstream download; seed_history.checksum_sha256 hashes the final local seed file.
+An upstream generation timestamp is not a boundary effective date; unknown
+boundary_reference_date values remain null. Province seeds are grouped by island:
+0001_provinces_sumatera.json through 0007_provinces_papua.json. City/regency seeds
+are grouped by province: 0008_cities_aceh.json through
+0045_cities_papua_barat_daya.json, ordered by province code. Apply all province
+seeds before city/regency seeds. Each file has its own version/history entry;
+repaired_region_codes lists only records contained in that file. No initial topic
+catalog is assumed.
 
 PostGIS must be installed on the PostgreSQL server. Future SQL migrations must run
 CREATE EXTENSION IF NOT EXISTS postgis; before creating the geographic tables.
@@ -43,6 +62,26 @@ https://postgis.net/docs/using_postgis_dbmanagement.html
 https://postgis.net/docs/ST_PointOnSurface.html
 https://dbml.dbdiagram.io/docs/
 '''
+}
+
+
+Table seed_history [headercolor: #64748B] {
+    Note: 'Append-only record of successfully applied seed files, ordered by numeric filename prefix. MAX(version) gives the last successful version. The seed runner must serialize execution, verify checksums of applied files, and commit each seed and its history row in one transaction. Failed/rolled-back seeds leave no history row; applied files are immutable and corrections require a new version.'
+
+    version         bigint      [pk, not null, note: 'Positive numeric seed filename prefix, e.g. 1 for 0001_provinces_sumatera.json.']
+    filename        text        [not null, note: 'Basename only; the runner validates its prefix against version.']
+    checksum_sha256 varchar(64) [not null, note: 'Lowercase hexadecimal SHA-256 of the exact JSON file bytes.']
+    applied_at      timestamptz [not null, default: `NOW()`]
+
+    Indexes {
+        filename [unique, name: 'uq_seed_history_filename']
+    }
+
+    Checks {
+        `version > 0` [name: 'ck_seed_history_version_positive']
+        `filename ~ '^[0-9]+_[a-z0-9_]+[.]json$'` [name: 'ck_seed_history_filename_format']
+        `checksum_sha256 ~ '^[0-9a-f]{64}$'` [name: 'ck_seed_history_checksum_sha256_format']
+    }
 }
 
 Enum city_kind {
