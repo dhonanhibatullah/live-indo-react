@@ -1,0 +1,34 @@
+{
+  "version": "3.0.0",
+  "darkMode": true,
+  "gridEnabling": false,
+  "currentViewName": null,
+  "defaultView": {
+    "detailLevel": "All",
+    "relationshipMode": "All",
+    "tablePositions": [
+      {
+        "name": "topics",
+        "schemaName": "public",
+        "x": 254.5532479874776,
+        "y": -48.63831199686939
+      },
+      {
+        "name": "provinces",
+        "schemaName": "public",
+        "x": 12,
+        "y": 386
+      },
+      {
+        "name": "cities",
+        "schemaName": "public",
+        "x": 594.240234375,
+        "y": 386
+      }
+    ],
+    "tableGroupCollapseStates": [],
+    "stickyNoteLayouts": [],
+    "referencePaths": []
+  },
+  "views": {}
+}

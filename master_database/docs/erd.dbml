@@ -1,0 +1,130 @@
+Project live_indo_react_master {
+    database_type: 'PostgreSQL'
+    Note: '''
+Master reference data: nationwide reaction topics and Indonesian administrative
+regions. The cities table includes both kota and kabupaten. Topics are independent
+of geography; reactions associate a topic with a location in the reaction database.
+No cross-database foreign keys or reaction/heat aggregates are defined here.
+
+PostGIS must be installed on the PostgreSQL server. Future SQL migrations must run
+CREATE EXTENSION IF NOT EXISTS postgis; before creating the geographic tables.
+This DBML is a design document, not an executable migration.
+The DBML CLI may export the custom geometry type as a quoted identifier containing
+its parameters. Migrations must use the unquoted SQL type
+geometry(MultiPolygon,4326), not "geometry(MultiPolygon,4326)".
+
+Boundaries use 2D geometry(MultiPolygon,4326): WGS84 longitude (X), latitude (Y).
+MultiPolygon supports disconnected islands. Normalize imported polygons with
+ST_Multi and transform source coordinates with ST_Transform before storage;
+ST_SetSRID alone does not reproject coordinates. Use one compatible boundary
+source/revision across administrative levels and retain its attribution below.
+
+Derive map labels with ST_PointOnSurface(boundary), viewport bounds with
+ST_Envelope(boundary), and area in square metres with ST_Area(boundary::geography).
+Do not treat geometry area in EPSG:4326 as square metres. A label point is not an
+administrative capital. Simplify geometry only for map delivery; retain canonical
+boundaries here. Validate city/province code and geographic consistency at import;
+province_id is the authoritative administrative relationship, not a spatial guess.
+
+DBML's portable index syntax does not express GiST. Future migrations must add:
+CREATE INDEX idx_provinces_boundary_gist ON provinces USING GIST (boundary);
+CREATE INDEX idx_cities_boundary_gist ON cities USING GIST (boundary);
+These are additional to the B-tree indexes declared below. Do not substitute
+B-tree indexes on boundary columns when exporting this diagram to SQL.
+
+IDs are stable internal references; codes and slugs remain reserved after soft
+deletion. Retire regions/topics with is_active or deleted_at rather than removing
+historical references. Reads exclude deleted rows; selectable cities also require
+an active, nondeleted parent province. Writers set updated_at on actual updates;
+its default is intentionally absent. No user/actor tables are assumed.
+
+References:
+https://postgis.net/docs/using_postgis_dbmanagement.html
+https://postgis.net/docs/ST_PointOnSurface.html
+https://dbml.dbdiagram.io/docs/
+'''
+}
+
+Enum city_kind {
+    city [note: 'Kota, including administrative cities where applicable.']
+    regency [note: 'Kabupaten, including administrative regencies where applicable.']
+}
+
+Table topics [headercolor: #F59E0B] {
+    Note: 'A nationwide subject people can react to. Disable or soft-delete to close new participation while retaining history. No province/topic join table is required for nationwide availability.'
+
+    id          bigint      [pk, increment]
+    slug        text        [not null, note: 'Stable URL/API key; lowercase ASCII words separated by single hyphens.']
+    name        text        [not null, note: 'Human-readable topic title.']
+    description text        [not null, default: '']
+    is_active   boolean     [not null, default: true]
+    created_at  timestamptz [not null, default: `NOW()`]
+    updated_at  timestamptz
+    deleted_at  timestamptz
+
+    Indexes {
+        slug [unique, name: 'uq_topics_slug']
+    }
+
+    Checks {
+        `slug ~ '^[a-z0-9]+(-[a-z0-9]+)*$'` [name: 'ck_topics_slug_format']
+        `length(btrim(name)) > 0` [name: 'ck_topics_name_not_blank']
+    }
+}
+
+Table provinces [headercolor: #059669] {
+    Note: 'Indonesian province master data. Require a valid, nonempty canonical boundary before insertion. Keep codes as text; do not hard-code province counts. Geographic indexes and derived map values are specified in the project note.'
+
+    id                      bigint      [pk, increment]
+    kemendagri_code         varchar(2)  [not null, note: 'Two-digit province code from the selected Kemendagri reference edition; separate from BPS codes.']
+    name                    text        [not null, note: 'Official province name.']
+    boundary                geometry(MultiPolygon,4326) [not null]
+    boundary_source         text        [not null, note: 'Dataset/publisher reference including version or release identifier and attribution.']
+    boundary_reference_date date        [note: 'Effective/reference date of the source boundaries, when supplied; not the import timestamp.']
+    is_active               boolean     [not null, default: true]
+    created_at              timestamptz [not null, default: `NOW()`]
+    updated_at              timestamptz
+    deleted_at              timestamptz
+
+    Indexes {
+        kemendagri_code [unique, name: 'uq_provinces_kemendagri_code']
+    }
+
+    Checks {
+        `kemendagri_code ~ '^[0-9]{2}$'` [name: 'ck_provinces_code_format']
+        `length(btrim(name)) > 0` [name: 'ck_provinces_name_not_blank']
+        `length(btrim(boundary_source)) > 0` [name: 'ck_provinces_boundary_source_not_blank']
+        `ST_IsValid(boundary) AND NOT ST_IsEmpty(boundary)` [name: 'ck_provinces_boundary_valid']
+    }
+}
+
+Table cities [headercolor: #2563EB] {
+    Note: 'Second-level administrative regions: cities (kota) and regencies (kabupaten). Every record has exactly one parent province. Names need not be globally unique; kind distinguishes a city from a same-named regency. This table does not represent kecamatan or villages.'
+
+    id                      bigint      [pk, increment]
+    province_id             bigint      [not null]
+    kemendagri_code         varchar(5)  [not null, note: 'Full province-prefixed Kemendagri code in PP.CC form. Import must verify that PP matches the parent province code.']
+    kind                    city_kind   [not null]
+    name                    text        [not null, note: 'Official city/regency name; preserve local spelling.']
+    boundary                geometry(MultiPolygon,4326) [not null]
+    boundary_source         text        [not null, note: 'Dataset/publisher reference including version or release identifier and attribution.']
+    boundary_reference_date date        [note: 'Effective/reference date of the source boundaries, when supplied.']
+    is_active               boolean     [not null, default: true]
+    created_at              timestamptz [not null, default: `NOW()`]
+    updated_at              timestamptz
+    deleted_at              timestamptz
+
+    Indexes {
+        kemendagri_code [unique, name: 'uq_cities_kemendagri_code']
+        (province_id, kind, name, id) [name: 'idx_cities_province_kind_name', note: 'Parent lookup and ordered city/regency listing; province_id is the leading FK column.']
+    }
+
+    Checks {
+        `kemendagri_code ~ '^[0-9]{2}[.][0-9]{2}$'` [name: 'ck_cities_code_format']
+        `length(btrim(name)) > 0` [name: 'ck_cities_name_not_blank']
+        `length(btrim(boundary_source)) > 0` [name: 'ck_cities_boundary_source_not_blank']
+        `ST_IsValid(boundary) AND NOT ST_IsEmpty(boundary)` [name: 'ck_cities_boundary_valid']
+    }
+}
+
+Ref fk_cities_province: cities.province_id > provinces.id [delete: restrict, update: restrict]
