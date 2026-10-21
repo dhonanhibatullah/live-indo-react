@@ -44,3 +44,11 @@ pub struct SeedCopyright {
     pub license: String,
     pub license_url: String,
 }
+
+/// Locally maintained reference catalog without geographic source metadata.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CatalogSeedFile<T> {
+    pub version: i64,
+    pub name: String,
+    pub records: Vec<T>,
+}

@@ -89,8 +89,8 @@ pub async fn verify_schema(pool: &PgPool) -> Result<(), DatabaseError> {
 }
 
 async fn check_schema(pool: &PgPool) -> Result<(), DatabaseError> {
-    let (postgis, history, provinces, cities, kind): (bool, bool, bool, bool, bool) = sqlx::query_as(
-        "SELECT EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'postgis'), to_regclass('seed_history') IS NOT NULL, to_regclass('provinces') IS NOT NULL, to_regclass('cities') IS NOT NULL, to_regtype('city_kind') IS NOT NULL"
+    let (postgis, history, provinces, cities, kind, polling_methods): (bool, bool, bool, bool, bool, bool) = sqlx::query_as(
+        "SELECT EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'postgis'), to_regclass('seed_history') IS NOT NULL, to_regclass('provinces') IS NOT NULL, to_regclass('cities') IS NOT NULL, to_regtype('city_kind') IS NOT NULL, to_regclass('polling_methods') IS NOT NULL"
     ).fetch_one(pool).await.map_err(|error| DatabaseError::sql("check database schema", error))?;
     let missing: Vec<_> = [
         ("postgis", postgis),
@@ -98,6 +98,7 @@ async fn check_schema(pool: &PgPool) -> Result<(), DatabaseError> {
         ("provinces", provinces),
         ("cities", cities),
         ("city_kind", kind),
+        ("polling_methods", polling_methods),
     ]
     .into_iter()
     .filter_map(|(name, exists)| (!exists).then_some(name))

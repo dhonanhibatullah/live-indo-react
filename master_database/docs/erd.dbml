@@ -2,7 +2,7 @@ Project live_indo_react_master {
     database_type: 'PostgreSQL'
     Note: '''
 Master reference data: nationwide reaction topics and Indonesian administrative
-regions. The cities table includes both kota and kabupaten. Topics are independent
+regions and polling methods. Every topic references a polling method. The cities table includes both kota and kabupaten. Topics are independent
 of geography; reactions associate a topic with a location in the reaction database.
 No cross-database foreign keys or reaction/heat aggregates are defined here.
 seed_history tracks ordered JSON seed versions after schema migrations complete;
@@ -22,8 +22,19 @@ boundary_reference_date values remain null. Province seeds are grouped by island
 are grouped by province: 0008_cities_aceh.json through
 0045_cities_papua_barat_daya.json, ordered by province code. Apply all province
 seeds before city/regency seeds. Each file has its own version/history entry;
-repaired_region_codes lists only records contained in that file. No initial topic
-catalog is assumed.
+repaired_region_codes lists only records contained in that file. Version 46 is
+0046_polling_methods.json, a locally maintained version/name/records catalog with
+agree_disagree, rating, and selection behaviors; it has no geographic metadata.
+Apply it after the geographic files. No initial topic catalog is assumed.
+
+Topics reference polling_methods by ID, resolving stable codes rather than assuming
+generated IDs. selection_options is an ordered native text array, empty by default.
+Future master_service validation must require empty options for agree_disagree and
+rating, and at least two distinct, nonblank, trimmed labels for selection. Choices
+are case-sensitive. Rating responses are integers from 0 through 10; selection
+responses choose one option. Master_service must preserve method code meanings and
+freeze a topic's method/options once responses exist. No business validation
+triggers are installed here; response storage/validation is outside this crate.
 
 PostGIS and pg_trgm must be available on the PostgreSQL server. The extension
 migration enables both before creating tables and indexes.
@@ -94,12 +105,12 @@ Enum city_kind {
     regency [note: 'Kabupaten, including administrative regencies where applicable.']
 }
 
-Table topics [headercolor: #F59E0B] {
-    Note: 'A nationwide subject people can react to. Disable or soft-delete to close new participation while retaining history. No province/topic join table is required for nationwide availability.'
+Table polling_methods [headercolor: #8B5CF6] {
+    Note: 'Stable polling behaviors, seeded with agree_disagree, rating (0-10), and selection (one choice). Codes remain reserved after soft deletion. Master_service owns code immutability and method-dependent validation.'
 
     id          bigint      [pk, increment]
-    slug        text        [not null, note: 'Stable URL/API key; lowercase ASCII words separated by single hyphens.']
-    name        text        [not null, note: 'Human-readable topic title.']
+    code        text        [not null]
+    name        text        [not null]
     description text        [not null, default: '']
     is_active   boolean     [not null, default: true]
     created_at  timestamptz [not null, default: `NOW()`]
@@ -107,12 +118,40 @@ Table topics [headercolor: #F59E0B] {
     deleted_at  timestamptz
 
     Indexes {
+        code [unique, name: 'uq_polling_methods_code']
+        is_active [name: 'idx_polling_methods_is_active']
+        deleted_at [name: 'idx_polling_methods_deleted_at']
+    }
+
+    Checks {
+        `code ~ '^[a-z]+(_[a-z]+)*$'` [name: 'ck_polling_methods_code_format']
+        `length(btrim(name)) > 0` [name: 'ck_polling_methods_name_not_blank']
+    }
+}
+
+Table topics [headercolor: #F59E0B] {
+    Note: 'A nationwide subject people can react to. Disable or soft-delete to close new participation while retaining history. No province/topic join table is required for nationwide availability.'
+
+    id          bigint      [pk, increment]
+    slug        text        [not null, note: 'Stable URL/API key; lowercase ASCII words separated by single hyphens.']
+    name        text        [not null, note: 'Human-readable topic title.']
+    description text        [not null, default: '']
+    polling_method_id bigint [not null]
+    selection_options text[] [not null, default: `'{}'::text[]`, note: 'Ordered topic choices; empty for nonselection methods by application policy.']
+    is_active   boolean     [not null, default: true]
+    created_at  timestamptz [not null, default: `NOW()`]
+    updated_at  timestamptz
+    deleted_at  timestamptz
+
+    Indexes {
+        polling_method_id [name: 'idx_topics_polling_method_id']
         deleted_at [name: 'idx_topics_deleted_at']
         is_active [name: 'idx_topics_is_active']
         slug [unique, name: 'uq_topics_slug']
     }
 
     Checks {
+        `cardinality(selection_options) = 0 OR (array_ndims(selection_options) = 1 AND array_lower(selection_options, 1) = 1)` [name: 'ck_topics_selection_options_shape']
         `slug ~ '^[a-z0-9]+(-[a-z0-9]+)*$'` [name: 'ck_topics_slug_format']
         `length(btrim(name)) > 0` [name: 'ck_topics_name_not_blank']
     }
@@ -178,3 +217,5 @@ Table cities [headercolor: #2563EB] {
 }
 
 Ref fk_cities_province: cities.province_id > provinces.id [delete: restrict, update: restrict]
+
+Ref fk_topics_polling_method: topics.polling_method_id > polling_methods.id [delete: restrict, update: restrict]

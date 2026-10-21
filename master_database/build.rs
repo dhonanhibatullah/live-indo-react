@@ -26,6 +26,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     let mut provinces = String::from("pub static FILES: &[EmbeddedSeed] = &[\n");
     let mut cities = provinces.clone();
+    let mut polling_methods = provinces.clone();
     let mut expected_version = 1;
 
     for path in files {
@@ -41,6 +42,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         let group = match version {
             1..=7 if name.starts_with("provinces_") => &mut provinces,
             8..=45 if name.starts_with("cities_") => &mut cities,
+            46 if name == "polling_methods" => &mut polling_methods,
             _ => return Err(io::Error::other(format!("unsupported seed: {filename}")).into()),
         };
         if version != expected_version {
@@ -54,7 +56,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         let metadata: serde_json::Value = serde_json::from_slice(&raw)?;
         if metadata["version"].as_i64() != Some(version)
             || metadata["name"].as_str() != Some(name)
-            || metadata["srid"].as_u64() != Some(4326)
+            || (version <= 45 && metadata["srid"].as_u64() != Some(4326))
         {
             return Err(io::Error::other(format!(
                 "seed envelope does not match filename or SRID: {filename}"
@@ -80,12 +82,16 @@ fn main() -> Result<(), Box<dyn Error>> {
         expected_version += 1;
     }
 
-    if expected_version != 46 {
-        return Err(io::Error::other("expected all 45 province and city seed files").into());
+    if expected_version != 47 {
+        return Err(
+            io::Error::other("expected all 46 geographic and polling method seed files").into(),
+        );
     }
     provinces.push_str("];\n");
     cities.push_str("];\n");
+    polling_methods.push_str("];\n");
     fs::write(output.join("province_seeds.rs"), provinces)?;
     fs::write(output.join("city_seeds.rs"), cities)?;
+    fs::write(output.join("polling_method_seeds.rs"), polling_methods)?;
     Ok(())
 }

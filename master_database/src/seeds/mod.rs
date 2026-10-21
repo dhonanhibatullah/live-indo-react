@@ -17,6 +17,8 @@
 
 #[path = "0008_0045_cities.rs"]
 pub mod cities;
+#[path = "0046_polling_methods.rs"]
+pub mod polling_methods;
 #[path = "0001_0007_provinces.rs"]
 pub mod provinces;
 
@@ -27,7 +29,7 @@ use std::{fmt, io::Read};
 use flate2::read::GzDecoder;
 use serde::de::DeserializeOwned;
 
-use crate::models::SeedFile;
+use crate::models::{CatalogSeedFile, SeedFile};
 
 pub use error::LoadError;
 
@@ -55,12 +57,23 @@ impl EmbeddedSeed {
 
     /// Decompress and deserialize just this seed. The temporary JSON is dropped.
     pub fn load<T: DeserializeOwned>(&'static self) -> Result<LoadedSeed<T>, LoadError> {
+        let data = self.decode()?;
+        Ok(LoadedSeed { file: self, data })
+    }
+
+    pub fn load_catalog<T: DeserializeOwned>(
+        &'static self,
+    ) -> Result<LoadedCatalogSeed<T>, LoadError> {
+        let data = self.decode()?;
+        Ok(LoadedCatalogSeed { file: self, data })
+    }
+
+    fn decode<T: DeserializeOwned>(&self) -> Result<T, LoadError> {
         let json = self.json()?;
-        let data = serde_json::from_str(&json).map_err(|source| LoadError::Deserialize {
+        serde_json::from_str(&json).map_err(|source| LoadError::Deserialize {
             filename: self.filename,
             source,
-        })?;
-        Ok(LoadedSeed { file: self, data })
+        })
     }
 
     pub fn compressed_len(&self) -> usize {
@@ -89,3 +102,9 @@ pub struct LoadedSeed<T> {
 #[cfg(test)]
 #[path = "../../tests/unit/seeds.rs"]
 mod tests;
+
+#[derive(Debug)]
+pub struct LoadedCatalogSeed<T> {
+    pub file: &'static EmbeddedSeed,
+    pub data: CatalogSeedFile<T>,
+}

@@ -1,0 +1,21 @@
+{
+  "version": 46,
+  "name": "polling_methods",
+  "records": [
+    {
+      "code": "agree_disagree",
+      "name": "Agree/disagree",
+      "description": "A boolean choice between agreement and disagreement."
+    },
+    {
+      "code": "rating",
+      "name": "Rating",
+      "description": "An integer rating from 0 through 10."
+    },
+    {
+      "code": "selection",
+      "name": "Selection",
+      "description": "One choice from the topic's ordered selection options."
+    }
+  ]
+}

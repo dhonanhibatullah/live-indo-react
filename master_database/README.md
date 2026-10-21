@@ -3,7 +3,8 @@
 PostgreSQL/PostGIS reference data for live-indo-react: nationwide reaction topics,
 Indonesian provinces, and cities/regencies with geographic boundaries. The Rust
 executable imports 38 provinces and 514 cities/regencies from 45 embedded seed
-files. Topics have a schema but no initial seed data.
+files, plus three polling methods from a separate catalog seed. Topics have a
+schema but no initial seed data.
 
 See the [ERD](docs/erd.dbml) for the schema and [AGENTS.md](AGENTS.md) for contributor
 guidance.
@@ -46,7 +47,7 @@ cargo run --release --locked
 ```
 
 The executable connects, applies pending SQL migrations, verifies the schema,
-seeds provinces followed by cities, and closes the pool. The configured role
+seeds provinces, cities, and polling methods, and closes the pool. The configured role
 needs permission to create the PostGIS/pg_trgm extensions and schema objects,
 read and insert reference and history rows, and use identity sequences. The target database must already
 exist; both extensions must be available on its server. Name searches on topics,
@@ -91,7 +92,7 @@ The runtime runs as UID/GID `10001:10001`. Credentials are supplied at runtime;
 ## Seed behavior
 
 After migrations, the executable imports provinces before cities and exits. A fresh successful
-run inserts 552 geographic rows and 45 seed-history rows. INFO messages go to
+run inserts 552 geographic rows, three polling methods, and 46 seed-history rows. INFO messages go to
 stdout; errors go to stderr with a nonzero exit status.
 
 Run the same command again safely: matching completed files are skipped, and
@@ -127,3 +128,28 @@ without the variable, live cases are skipped. Other tests run without a database
 The geographic seed envelopes record provenance and source revisions. Retain
 their attribution and the [upstream license](seeds/LICENSE.laravel-nusa) when
 redistributing the data.
+
+## Polling methods and topic options
+
+The catalog seed `0046_polling_methods.json` adds `agree_disagree`, `rating`, and
+`selection`. Topics require a `polling_method_id` foreign key and store choices in
+`selection_options TEXT[] NOT NULL DEFAULT '{}'`. Resolve methods by code instead
+of assuming generated IDs. The complete fresh workflow applies six schema
+migrations and 46 seed files, inserting 555 reference rows.
+
+The database enforces required fields, the foreign key, and a one-dimensional
+options array starting at index 1 (or an empty array). There are no business
+validation triggers. The future `master_service` must validate that:
+
+- Agree/disagree and rating topics have no selection options.
+- Selection topics have at least two distinct, nonblank, trimmed choices; labels
+  are case-sensitive and their order is preserved.
+- Ratings are integers from 0 through 10; selection responses choose one option.
+- Method codes retain their meaning, and a topic's method/options stay fixed once
+  responses exist.
+
+The geographic seed files retain versions 1–45 and their exact bytes. The method
+catalog uses only `version`, `name`, and `records`, without geographic metadata.
+This schema change edits undeployed migrations; recreate disposable development
+databases or explicitly reconcile migration history before using it on an older
+local schema.

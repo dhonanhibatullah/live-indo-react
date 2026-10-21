@@ -140,11 +140,12 @@ impl Fixture {
     }
 
     async fn count(&self, table: &str) -> i64 {
-        assert!(["provinces", "cities", "seed_history"].contains(&table));
+        assert!(["provinces", "cities", "seed_history", "polling_methods"].contains(&table));
         sqlx::query_scalar(match table {
             "provinces" => "SELECT count(*) FROM provinces",
             "cities" => "SELECT count(*) FROM cities",
             "seed_history" => "SELECT count(*) FROM seed_history",
+            "polling_methods" => "SELECT count(*) FROM polling_methods",
             _ => unreachable!(),
         })
         .fetch_one(&self.pool)
@@ -199,12 +200,12 @@ async fn executable_migrates_then_seeds_and_rolls_back_failed_sql() {
         );
         assert_eq!(fixture.count("provinces").await, 38);
         assert_eq!(fixture.count("cities").await, 514);
-        assert_eq!(fixture.count("seed_history").await, 45);
+        assert_eq!(fixture.count("seed_history").await, 46);
         let count: i64 = sqlx::query_scalar("SELECT count(*) FROM _sqlx_migrations WHERE success")
             .fetch_one(&fixture.pool)
             .await
             .unwrap();
-        assert_eq!(count, 5);
+        assert_eq!(count, 6);
     }
     let connected = database::connection::connect(&fixture.env).await.unwrap();
     connected.close().await;
@@ -270,16 +271,16 @@ async fn executable_seeds_reruns_and_reports_schema_failure() {
         env!("CARGO_PKG_VERSION"),
         " starting"
     )));
-    assert!(stdout.contains("files_applied=45 files_skipped=0 rows_inserted=552"));
+    assert!(stdout.contains("files_applied=46 files_skipped=0 rows_inserted=555"));
     assert!(stdout.contains("database connection pool closed"));
     assert!(stdout.contains("master_database completed"));
     assert_eq!(fixture.count("provinces").await, 38);
     assert_eq!(fixture.count("cities").await, 514);
-    assert_eq!(fixture.count("seed_history").await, 45);
+    assert_eq!(fixture.count("seed_history").await, 46);
 
     let second = run();
     assert!(second.status.success());
-    assert!(String::from_utf8_lossy(&second.stdout).contains("files_applied=0 files_skipped=45"));
+    assert!(String::from_utf8_lossy(&second.stdout).contains("files_applied=0 files_skipped=46"));
 
     sqlx::query("DROP TABLE cities")
         .execute(&fixture.pool)
@@ -303,15 +304,15 @@ async fn fresh_run_and_rerun_preserve_seed_history_and_geometry() {
     assert_eq!(
         database::seed(&connected).await.unwrap(),
         SeedSummary {
-            files_applied: 45,
+            files_applied: 46,
             files_skipped: 0,
-            rows_inserted: 552,
+            rows_inserted: 555,
             rows_skipped: 0
         }
     );
     assert_eq!(fixture.count("provinces").await, 38);
     assert_eq!(fixture.count("cities").await, 514);
-    assert_eq!(fixture.count("seed_history").await, 45);
+    assert_eq!(fixture.count("seed_history").await, 46);
     let invalid: i64 = sqlx::query_scalar("SELECT count(*) FROM (SELECT boundary FROM provinces UNION ALL SELECT boundary FROM cities) b WHERE NOT ST_IsValid(boundary) OR ST_IsEmpty(boundary) OR ST_SRID(boundary) <> 4326 OR GeometryType(boundary) <> 'MULTIPOLYGON'").fetch_one(&connected).await.unwrap();
     assert_eq!(invalid, 0);
     let mismatches: i64 = sqlx::query_scalar("SELECT count(*) FROM cities c JOIN provinces p ON p.id=c.province_id WHERE left(c.kemendagri_code,2) <> p.kemendagri_code").fetch_one(&connected).await.unwrap();
@@ -319,7 +320,7 @@ async fn fresh_run_and_rerun_preserve_seed_history_and_geometry() {
     assert_eq!(
         database::seed(&connected).await.unwrap(),
         SeedSummary {
-            files_skipped: 45,
+            files_skipped: 46,
             ..Default::default()
         }
     );
@@ -335,7 +336,7 @@ async fn existing_retired_rows_are_preserved_while_missing_rows_are_created() {
     let parent: i64 = sqlx::query_scalar("INSERT INTO provinces(kemendagri_code,name,boundary,boundary_source,is_active,deleted_at) VALUES ('11','Preserved province',ST_GeomFromText('MULTIPOLYGON(((100 0,101 0,101 1,100 0)))',4326),'fixture',false,NOW()) RETURNING id").fetch_one(&fixture.pool).await.unwrap();
     sqlx::query("INSERT INTO cities(province_id,kemendagri_code,kind,name,boundary,boundary_source,is_active,deleted_at) VALUES ($1,'11.01','city','Preserved city',ST_GeomFromText('MULTIPOLYGON(((100 0,101 0,101 1,100 0)))',4326),'fixture',false,NOW())").bind(parent).execute(&fixture.pool).await.unwrap();
     let result = database::seed(&fixture.pool).await.unwrap();
-    assert_eq!((result.rows_inserted, result.rows_skipped), (550, 2));
+    assert_eq!((result.rows_inserted, result.rows_skipped), (553, 2));
     let preserved: (String, bool, bool, String) = sqlx::query_as(
         "SELECT name,is_active,deleted_at IS NOT NULL,boundary_source FROM provinces WHERE id=$1",
     )
@@ -349,7 +350,7 @@ async fn existing_retired_rows_are_preserved_while_missing_rows_are_created() {
     );
     let city: (String, String, bool, bool) = sqlx::query_as("SELECT name,kind::text,is_active,deleted_at IS NOT NULL FROM cities WHERE kemendagri_code='11.01'").fetch_one(&fixture.pool).await.unwrap();
     assert_eq!(city, ("Preserved city".into(), "city".into(), false, true));
-    assert_eq!(fixture.count("seed_history").await, 45);
+    assert_eq!(fixture.count("seed_history").await, 46);
     fixture.close().await;
 }
 
@@ -417,9 +418,9 @@ async fn failed_file_rolls_back_and_retry_resumes_after_prior_commits() {
     assert_eq!(
         retry,
         SeedSummary {
-            files_applied: 44,
+            files_applied: 45,
             files_skipped: 1,
-            rows_inserted: 542,
+            rows_inserted: 545,
             rows_skipped: 0
         }
     );
@@ -448,10 +449,10 @@ async fn independent_runners_do_not_duplicate_records_or_history() {
     let (first, other) = tokio::join!(database::seed(&fixture.pool), database::seed(&second));
     let first = first.unwrap();
     let other = other.unwrap();
-    assert_eq!(first.files_applied + other.files_applied, 45);
-    assert_eq!(first.files_skipped + other.files_skipped, 45);
-    assert_eq!(first.rows_inserted + other.rows_inserted, 552);
-    assert_eq!(fixture.count("seed_history").await, 45);
+    assert_eq!(first.files_applied + other.files_applied, 46);
+    assert_eq!(first.files_skipped + other.files_skipped, 46);
+    assert_eq!(first.rows_inserted + other.rows_inserted, 555);
+    assert_eq!(fixture.count("seed_history").await, 46);
     assert_eq!(fixture.count("provinces").await, 38);
     assert_eq!(fixture.count("cities").await, 514);
     second.close().await;
@@ -476,5 +477,193 @@ async fn connection_reports_missing_schema_without_creating_it() {
             .await
             .unwrap();
     assert!(!postgis);
+    fixture.close().await;
+}
+
+#[tokio::test]
+async fn polling_methods_preserve_existing_rows_and_reject_history_conflicts() {
+    let Some(fixture) = Fixture::new(true).await else {
+        return;
+    };
+    sqlx::query("INSERT INTO polling_methods (id, code, name, description, is_active, deleted_at) VALUES (100, 'rating', 'Existing rating', 'Preserved description', false, NOW())")
+        .execute(&fixture.pool).await.unwrap();
+    let seeded = database::polling_methods::seed(&fixture.pool)
+        .await
+        .unwrap();
+    assert_eq!(
+        seeded,
+        SeedSummary {
+            files_applied: 1,
+            rows_inserted: 2,
+            rows_skipped: 1,
+            files_skipped: 0
+        }
+    );
+    let preserved: (i64, String, bool, bool) = sqlx::query_as("SELECT id, name, is_active, deleted_at IS NOT NULL FROM polling_methods WHERE code='rating'")
+        .fetch_one(&fixture.pool).await.unwrap();
+    assert_eq!(preserved, (100, "Existing rating".into(), false, true));
+    assert_eq!(fixture.count("polling_methods").await, 3);
+    assert_eq!(
+        database::polling_methods::seed(&fixture.pool)
+            .await
+            .unwrap()
+            .files_skipped,
+        1
+    );
+    sqlx::query("UPDATE seed_history SET checksum_sha256=repeat('0',64) WHERE version=46")
+        .execute(&fixture.pool)
+        .await
+        .unwrap();
+    let error = database::polling_methods::seed(&fixture.pool)
+        .await
+        .unwrap_err();
+    assert_eq!(error.version, Some(46));
+    assert_eq!(error.operation, "check seed history");
+    fixture.close().await;
+}
+
+#[tokio::test]
+async fn polling_method_seed_rolls_back_rows_and_history_on_failure() {
+    let Some(fixture) = Fixture::new(true).await else {
+        return;
+    };
+    // Test-only trigger simulates an arbitrary write failure in the middle of a file.
+    sqlx::raw_sql("CREATE FUNCTION reject_method() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN IF NEW.code='rating' THEN RAISE EXCEPTION 'fixture failure'; END IF; RETURN NEW; END $$; CREATE TRIGGER reject_method BEFORE INSERT ON polling_methods FOR EACH ROW EXECUTE FUNCTION reject_method();")
+        .execute(&fixture.pool).await.unwrap();
+    let error = database::polling_methods::seed(&fixture.pool)
+        .await
+        .unwrap_err();
+    assert_eq!(error.code.as_deref(), Some("rating"));
+    assert_eq!(fixture.count("polling_methods").await, 0);
+    assert_eq!(fixture.count("seed_history").await, 0);
+    sqlx::raw_sql("DROP TRIGGER reject_method ON polling_methods; DROP FUNCTION reject_method(); CREATE FUNCTION reject_method_history() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'fixture history failure'; END $$; CREATE TRIGGER reject_method_history BEFORE INSERT ON seed_history FOR EACH ROW EXECUTE FUNCTION reject_method_history();")
+        .execute(&fixture.pool).await.unwrap();
+    let error = database::polling_methods::seed(&fixture.pool)
+        .await
+        .unwrap_err();
+    assert_eq!(error.operation, "record seed history");
+    assert_eq!(fixture.count("polling_methods").await, 0);
+    assert_eq!(fixture.count("seed_history").await, 0);
+    sqlx::raw_sql("DROP TRIGGER reject_method_history ON seed_history; DROP FUNCTION reject_method_history();")
+        .execute(&fixture.pool).await.unwrap();
+    let retry = database::polling_methods::seed(&fixture.pool)
+        .await
+        .unwrap();
+    assert_eq!(retry.rows_inserted, 3);
+    assert_eq!(fixture.count("seed_history").await, 1);
+    fixture.close().await;
+}
+
+#[tokio::test]
+async fn topics_reference_methods_and_store_native_arrays_without_business_triggers() {
+    let Some(fixture) = Fixture::new(true).await else {
+        return;
+    };
+    database::polling_methods::seed(&fixture.pool)
+        .await
+        .unwrap();
+    let selection: i64 =
+        sqlx::query_scalar("SELECT id FROM polling_methods WHERE code='selection'")
+            .fetch_one(&fixture.pool)
+            .await
+            .unwrap();
+    let id: i64 = sqlx::query_scalar("INSERT INTO topics (slug, name, polling_method_id, selection_options) VALUES ('selection-topic','Selection topic',$1,$2) RETURNING id")
+        .bind(selection).bind(vec!["Yes", "No"]).fetch_one(&fixture.pool).await.unwrap();
+    let options: Vec<String> =
+        sqlx::query_scalar("SELECT selection_options FROM topics WHERE id=$1")
+            .bind(id)
+            .fetch_one(&fixture.pool)
+            .await
+            .unwrap();
+    assert_eq!(options, ["Yes", "No"]);
+    let error = sqlx::query("INSERT INTO topics (slug, name, polling_method_id) VALUES ('missing','Missing',9223372036854775807)")
+        .execute(&fixture.pool).await.unwrap_err();
+    assert_eq!(
+        error.as_database_error().unwrap().code().as_deref(),
+        Some("23503")
+    );
+    let error = sqlx::query("INSERT INTO topics (slug, name) VALUES ('no-method','No method')")
+        .execute(&fixture.pool)
+        .await
+        .unwrap_err();
+    assert_eq!(
+        error.as_database_error().unwrap().code().as_deref(),
+        Some("23502")
+    );
+    let error = sqlx::query("DELETE FROM polling_methods WHERE id=$1")
+        .bind(selection)
+        .execute(&fixture.pool)
+        .await
+        .unwrap_err();
+    assert_eq!(
+        error.as_database_error().unwrap().code().as_deref(),
+        Some("23503")
+    );
+    let error = sqlx::query("UPDATE polling_methods SET id=id+1000 WHERE id=$1")
+        .bind(selection)
+        .execute(&fixture.pool)
+        .await
+        .unwrap_err();
+    assert_eq!(
+        error.as_database_error().unwrap().code().as_deref(),
+        Some("23503")
+    );
+    for sql in [
+        "UPDATE topics SET selection_options=NULL WHERE slug='selection-topic'",
+        "UPDATE topics SET selection_options=ARRAY[['A','B'],['C','D']] WHERE slug='selection-topic'",
+        "UPDATE topics SET selection_options='[0:1]={A,B}'::text[] WHERE slug='selection-topic'",
+    ] {
+        assert!(sqlx::query(sql).execute(&fixture.pool).await.is_err());
+    }
+    // Method-dependent rules intentionally belong to the future master_service.
+    sqlx::query("UPDATE topics SET selection_options='{}' WHERE id=$1")
+        .bind(id)
+        .execute(&fixture.pool)
+        .await
+        .unwrap();
+    let defaults: Vec<String> =
+        sqlx::query_scalar("SELECT selection_options FROM topics WHERE id=$1")
+            .bind(id)
+            .fetch_one(&fixture.pool)
+            .await
+            .unwrap();
+    assert!(defaults.is_empty());
+    let triggers: i64 = sqlx::query_scalar("SELECT count(*) FROM pg_trigger WHERE tgrelid IN ('topics'::regclass, 'polling_methods'::regclass) AND NOT tgisinternal")
+        .fetch_one(&fixture.pool).await.unwrap();
+    assert_eq!(triggers, 0);
+    for index in [
+        "uq_polling_methods_code",
+        "idx_polling_methods_is_active",
+        "idx_polling_methods_deleted_at",
+        "idx_topics_polling_method_id",
+    ] {
+        assert!(
+            sqlx::query_scalar::<_, bool>("SELECT to_regclass($1) IS NOT NULL")
+                .bind(index)
+                .fetch_one(&fixture.pool)
+                .await
+                .unwrap()
+        );
+    }
+    let mut paths: Vec<_> =
+        std::fs::read_dir(Path::new(env!("CARGO_MANIFEST_DIR")).join("migrations"))
+            .unwrap()
+            .map(|entry| entry.unwrap().path())
+            .filter(|path| path.to_string_lossy().ends_with(".down.sql"))
+            .collect();
+    paths.sort();
+    for path in paths.into_iter().rev() {
+        sqlx::raw_sql(sqlx::AssertSqlSafe(std::fs::read_to_string(path).unwrap()))
+            .execute(&fixture.pool)
+            .await
+            .unwrap();
+    }
+    let removed: bool = sqlx::query_scalar(
+        "SELECT to_regclass('topics') IS NULL AND to_regclass('polling_methods') IS NULL",
+    )
+    .fetch_one(&fixture.pool)
+    .await
+    .unwrap();
+    assert!(removed);
     fixture.close().await;
 }

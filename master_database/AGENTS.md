@@ -2,8 +2,9 @@
 
 This standalone Rust 2024 crate owns the PostgreSQL/PostGIS reference schema and
 geographic seed importer for live-indo-react. The schema contains reaction topics,
-Indonesian provinces, cities/regencies, and seed history. The current embedded
-catalog contains 38 provinces and 514 cities/regencies across 45 JSON files;
+Indonesian provinces, cities/regencies, polling methods, and seed history. The current embedded
+catalog contains 38 provinces and 514 cities/regencies across 45 JSON files, plus
+three polling methods in version 46;
 there is no initial topic catalog. Counts describe this dataset, not permanent
 administrative rules.
 
@@ -19,7 +20,7 @@ It has no HTTP server, reaction storage, authentication, or aggregation logic.
 | `Cargo.toml`, `Cargo.lock` | Independent crate dependencies and reproducible resolution; there is no root Cargo workspace. |
 | `src/main.rs` | Async lifecycle: app/environment loading, connection, migrations, schema verification, seeding, pool shutdown, and exit status. |
 | `src/lib.rs` | Public module exports for the executable and integration tests. |
-| `src/models/` | App/environment types, typed seed envelopes, province/city records, and GeoJSON boundary types. |
+| `src/models/` | App/environment types, typed seed envelopes, province/city and polling-method records, catalog envelopes, and GeoJSON boundary types. |
 | `src/config/` | Cargo metadata and optional working-directory `.env` loading with process-variable overrides. |
 | `src/seeds/` | Embedded file metadata, decompression, typed JSON loading, and seed loading errors. |
 | `src/database/connection.rs` | Typed PostgreSQL connection options, pool settings, and schema prerequisite checks. |
@@ -27,6 +28,7 @@ It has no HTTP server, reaction storage, authentication, or aggregation logic.
 | `src/database/mod.rs` | Seed orchestration, transactions, advisory locking, history checks, summaries, errors, and console output. |
 | `src/database/0001_0007_provinces.rs` | Province preparation, existence queries, and inserts. |
 | `src/database/0008_0045_cities.rs` | City/regency preparation, province-code validation, parent lookup, existence queries, and inserts. |
+| `src/database/0046_polling_methods.rs` | Catalog preparation, existence checks by code, and conflict-safe inserts. |
 | `build.rs` | Validates seed filenames/envelopes, hashes exact JSON bytes, and generates deterministic compressed assets in Cargo's `OUT_DIR`. |
 | `seeds/` | Prettified source JSON, source attribution, and the upstream license. |
 | `migrations/` | Ordered paired `.up.sql`/`.down.sql` schema changes; applied by the executable before seeding. |
@@ -34,14 +36,14 @@ It has no HTTP server, reaction storage, authentication, or aggregation logic.
 | `tests/` | All test implementations, including private-module tests under `tests/unit/`. |
 | `Dockerfile`, `.dockerignore` | Multi-stage image running the single migrate-then-seed executable; exclude credentials and local artifacts. |
 
-The two numeric seed modules in `src/seeds/` use the same filenames as their
+The numeric seed modules in `src/seeds/` use the same filenames as their
 database counterparts. `#[path]` exposes them as `seeds::provinces`,
-`seeds::cities`, `database::provinces`, and `database::cities`.
+`seeds::cities`, `seeds::polling_methods`, and their `database` counterparts.
 
 ## Data and execution contracts
 
 - Preserve the flow `config -> connection -> migrations -> schema check ->
-  provinces -> cities -> close` in `main.rs`. Use the migration-capable connection
+  provinces -> cities -> polling methods -> close` in `main.rs`. Use the migration-capable connection
   before schema creation and verify prerequisites on the same pool afterward.
   Preserve SQLx checksums, migration locking, and `_sqlx_migrations` tracking;
   keep it separate from JSON `seed_history`. The database must already exist.
@@ -113,3 +115,20 @@ them at a shared development or production server.
 
 For documentation-only edits, check paths, commands against implementation, and
 whitespace; Rust tests are not evidence of documentation accuracy.
+
+## Polling metadata
+
+The fresh workflow has six schema migrations, 46 seed files, and 555 reference
+rows. Keep geographic seed versions/bytes unchanged. Version 46 uses the
+`CatalogSeedFile<T>` envelope (`version`, `name`, `records`) and the catalog loader,
+sharing compression, checksums, advisory locking, and transaction/history behavior
+with geographic seeds. It does not have SRID or upstream boundary metadata.
+
+Topics have a required polling-method reference and ordered native `TEXT[]`
+options. SQL enforces the foreign key, required fields, and array shape. Do not
+add business validation triggers: future `master_service` code owns method code
+immutability, method-dependent option validation, and freezing topic polling
+configuration after responses exist. Selection requires at least two distinct,
+nonblank, trimmed choices; other methods require empty options. Rating is integer
+0–10 and selection chooses one option. This crate has no initial topic seed or
+response validation implementation.

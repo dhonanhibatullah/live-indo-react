@@ -1,6 +1,8 @@
 use std::{collections::BTreeSet, fs, path::Path};
 
-use master_database::models::{Boundary, City, CityKind, Env, Province, SeedFile};
+use master_database::models::{
+    Boundary, CatalogSeedFile, City, CityKind, Env, PollingMethod, Province, SeedFile,
+};
 use serde_json::json;
 
 #[test]
@@ -49,6 +51,11 @@ fn models_deserialize_all_seed_files_without_losing_province_links_or_provenance
                 assert!(!coordinates.is_empty());
             }
             province_files += 1;
+        } else if expected_name == "polling_methods" {
+            let seed: CatalogSeedFile<PollingMethod> = serde_json::from_slice(&bytes).unwrap();
+            assert_eq!(seed.version, 46);
+            assert_eq!(seed.name, expected_name);
+            assert_eq!(seed.records.len(), 3);
         } else {
             assert!(expected_name.starts_with("cities_"));
             let seed: SeedFile<City> = serde_json::from_slice(&bytes).unwrap();

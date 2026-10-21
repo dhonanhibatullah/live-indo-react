@@ -2,7 +2,7 @@ use std::{collections::BTreeSet, error::Error, fs, path::Path};
 
 use master_database::{
     models::City,
-    seeds::{LoadError, cities, provinces},
+    seeds::{LoadError, cities, polling_methods, provinces},
 };
 use sha2::{Digest, Sha256};
 
@@ -11,7 +11,10 @@ fn compressed_assets_preserve_exact_source_bytes_and_history_checksums() {
     let directory = Path::new(env!("CARGO_MANIFEST_DIR")).join("seeds");
     let mut original_total = 0;
     let mut compressed_total = 0;
-    let files = provinces::FILES.iter().chain(cities::FILES);
+    let files = provinces::FILES
+        .iter()
+        .chain(cities::FILES)
+        .chain(polling_methods::FILES);
 
     for (index, file) in files.enumerate() {
         assert_eq!(file.version, index as i64 + 1);
@@ -85,5 +88,36 @@ fn wrong_record_type_returns_a_named_deserialization_error() {
             .unwrap()
             .downcast_ref::<serde_json::Error>()
             .is_some()
+    );
+}
+
+#[test]
+fn polling_methods_use_a_catalog_envelope_and_load_exactly_three_behaviors() {
+    let loaded = polling_methods::load().next().unwrap().unwrap();
+    assert_eq!(loaded.data.version, 46);
+    assert_eq!(loaded.data.name, "polling_methods");
+    assert_eq!(loaded.file.filename, "0046_polling_methods.json");
+    let codes: Vec<_> = loaded
+        .data
+        .records
+        .iter()
+        .map(|record| record.code.as_str())
+        .collect();
+    assert_eq!(codes, ["agree_disagree", "rating", "selection"]);
+    assert!(
+        loaded
+            .data
+            .records
+            .iter()
+            .all(|record| !record.name.is_empty() && !record.description.is_empty())
+    );
+    let json: serde_json::Value = serde_json::from_str(&loaded.file.json().unwrap()).unwrap();
+    assert!(json.get("srid").is_none());
+    assert!(json.get("source").is_none());
+    assert!(
+        loaded
+            .file
+            .load::<master_database::models::Province>()
+            .is_err()
     );
 }

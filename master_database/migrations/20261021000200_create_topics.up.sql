@@ -3,11 +3,19 @@ CREATE TABLE topics (
     slug TEXT NOT NULL,
     name TEXT NOT NULL,
     description TEXT NOT NULL DEFAULT '',
+    polling_method_id BIGINT NOT NULL,
+    selection_options TEXT[] NOT NULL DEFAULT '{}',
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ,
     deleted_at TIMESTAMPTZ,
 
+    CONSTRAINT fk_topics_polling_method
+        FOREIGN KEY (polling_method_id) REFERENCES polling_methods (id)
+        ON DELETE RESTRICT ON UPDATE RESTRICT,
+    CONSTRAINT ck_topics_selection_options_shape
+        CHECK (cardinality(selection_options) = 0 OR
+            (array_ndims(selection_options) = 1 AND array_lower(selection_options, 1) = 1)),
     CONSTRAINT ck_topics_slug_format
         CHECK (slug ~ '^[a-z0-9]+(-[a-z0-9]+)*$'),
     CONSTRAINT ck_topics_name_not_blank
@@ -16,9 +24,13 @@ CREATE TABLE topics (
 
 -- Slugs remain reserved after soft deletion.
 CREATE UNIQUE INDEX uq_topics_slug ON topics (slug);
+CREATE INDEX idx_topics_polling_method_id ON topics (polling_method_id);
 CREATE INDEX idx_topics_deleted_at ON topics (deleted_at);
 CREATE INDEX idx_topics_is_active ON topics (is_active);
 CREATE INDEX idx_topics_name_trgm ON topics USING GIN (name gin_trgm_ops);
 
 COMMENT ON TABLE topics IS
     'Nationwide reaction subjects. Disable or soft-delete to close participation while retaining history.';
+
+COMMENT ON COLUMN topics.selection_options IS
+    'Ordered, case-sensitive selection labels. Empty for agree/disagree or rating. Freeze method and choices once responses exist in the reaction service.';

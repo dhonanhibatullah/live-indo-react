@@ -9,6 +9,8 @@
 pub mod cities;
 pub mod connection;
 pub mod migrations;
+#[path = "0046_polling_methods.rs"]
+pub mod polling_methods;
 #[path = "0001_0007_provinces.rs"]
 pub mod provinces;
 
@@ -44,11 +46,12 @@ impl SeedSummary {
     }
 }
 
-/// Apply province seeds before city seeds, stopping at the first failure.
+/// Apply geographic seeds then polling methods, stopping at the first failure.
 pub async fn seed(pool: &PgPool) -> Result<SeedSummary, DatabaseError> {
     info(format_args!("seed run started"));
     let mut summary = provinces::seed(pool).await?;
     summary.add(cities::seed(pool).await?);
+    summary.add(polling_methods::seed(pool).await?);
     info(format_args!(
         "seed run complete files_applied={} files_skipped={} rows_inserted={} rows_skipped={}",
         summary.files_applied, summary.files_skipped, summary.rows_inserted, summary.rows_skipped
@@ -60,11 +63,13 @@ pub async fn seed(pool: &PgPool) -> Result<SeedSummary, DatabaseError> {
 enum Group {
     Provinces,
     Cities,
+    PollingMethods,
 }
 
 enum PreparedRows {
     Provinces(Vec<provinces::PreparedProvince>),
     Cities(Vec<cities::PreparedCity>),
+    PollingMethods(Vec<crate::models::PollingMethod>),
 }
 
 struct RowOutcome {
@@ -191,6 +196,7 @@ async fn apply_pending(
     let prepared = tokio::task::spawn_blocking(move || match group {
         Group::Provinces => provinces::prepare(file).map(PreparedRows::Provinces),
         Group::Cities => cities::prepare(file).map(PreparedRows::Cities),
+        Group::PollingMethods => polling_methods::prepare(file).map(PreparedRows::PollingMethods),
     })
     .await
     .map_err(|error| DatabaseError::new("prepare seed task", error).file(file))??;
@@ -209,6 +215,15 @@ async fn apply_pending(
             for row in rows {
                 outcomes.push(
                     cities::execute(tx, row)
+                        .await
+                        .map_err(|error| error.file(file))?,
+                );
+            }
+        }
+        PreparedRows::PollingMethods(rows) => {
+            for row in rows {
+                outcomes.push(
+                    polling_methods::execute(tx, row)
                         .await
                         .map_err(|error| error.file(file))?,
                 );
