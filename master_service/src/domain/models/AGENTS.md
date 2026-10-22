@@ -24,8 +24,9 @@ server-owned identifiers and audit fields out of caller-controlled input. Do not
 introduce accounts, credentials, permission models, or reaction submission models
 solely because other projects have them.
 
-Test value invariants and error classifications as they are implemented. Models
-must stay usable without a running server, database, or event source.
+Test value invariants and error classifications as they are implemented in
+`tests/unit/domain/`. Models must stay usable without a running server, database,
+or event source.
 
 ## Logger models
 

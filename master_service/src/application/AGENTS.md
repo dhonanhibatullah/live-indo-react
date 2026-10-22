@@ -32,5 +32,6 @@ operation's actual success. Preserve cancellation and do not spawn untracked wor
 ## Tests
 
 Cover invalid master-data values/relationships, not-found/conflict cases,
-dependency failures, and rollback when implemented. Use fakes for external
-capabilities; use an isolated database only for adapter integration checks.
+dependency failures, and rollback when implemented in `tests/unit/application/`.
+Use fakes for external capabilities; use an isolated database only for adapter
+integration checks.

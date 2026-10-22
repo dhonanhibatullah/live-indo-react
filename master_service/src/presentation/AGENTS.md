@@ -26,4 +26,6 @@ changes coordinated with their consumers.
 ## Tests
 
 Cover DTO mapping, malformed input, safe error responses, cancellation, and the
-mapping of invalid input, missing records, conflicts, and persistence failures.
+mapping of invalid input, missing records, conflicts, and persistence failures in
+`tests/unit/presentation/`. Use `tests/integration/presentation/` for real
+transport behavior once it exists.

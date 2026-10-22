@@ -8,17 +8,26 @@ and quickly updated feeds. All views are grouped by topic.
 
 ## Project state and scope
 
-[INITIAL_PLAN.md](INITIAL_PLAN.md) is the project brief. The architecture below adapts
+The architecture below adapts
 the explicit clean architecture and distributed guidance of `../mate/lockmate` to
 Rust; the sibling checkout is a design reference, not a runtime dependency.
 
-Both backend services are Rust 2024 crates with implemented generic domain errors,
-logger models, logger utility contracts, and writer adapters. Their `src/main.rs`
-entrypoints remain placeholders. The remaining documented source layouts are
-targets, not implemented modules. Do not describe proposed behavior as already
-available. Add source files and dependencies only when implementing a
-feature that needs them.
+The three backend services are Rust 2024 crates with implemented generic domain errors,
+logger models, logger utility contracts, and writer adapters. `master_service` also has
+master-data entity models, object-safe repository contracts and PostgreSQL
+adapters, a validator contract and regex adapter, and app context/config models.
+`shared/` is a separate Rust workspace for explicitly shared libraries; its `pgdt`
+crate provides context-aware PostgreSQL execution and transaction orchestration
+for the master repository adapters. All `src/main.rs` entrypoints remain
+placeholders. The remaining documented source layouts
+are targets, not implemented modules. Do not describe proposed behavior as already
+available. Add source files and dependencies only when implementing a feature that needs
+them.
 
+- `master_service/`: master-data service scaffold for topics, polling methods, and
+  Indonesian regions. Read its [service guide](master_service/AGENTS.md).
+- `shared/`: independent Rust workspace for reusable crates. See the
+  [`pgdt` guide](shared/crates/pgdt/README.md).
 - `reaction_service/`: accepts and inserts anonymous reactions/comments. Read its
   [service guide](reaction_service/AGENTS.md).
 - `broadcast_service/`: broadcasts accepted reactions, primarily over WebSockets.
@@ -50,8 +59,24 @@ Domain must not import application, infrastructure, presentation, or composition
 Application must not import concrete adapters or transport types. Presentation
 must not call repository/utility contracts or concrete application implementations.
 Composition is the place that connects concrete implementations across layers.
-Each service builds independently; there is no root Cargo workspace. Do not import
-another service's internal modules or introduce a shared crate merely for symmetry.
+Each service builds independently; there is no root Cargo workspace. `shared/` is a
+separate workspace for libraries consumed through explicit Cargo dependencies. Do not
+import another service's internal modules or introduce shared code merely for symmetry.
+
+## Domain errors
+
+Keep failure vocabulary classified instead of flattening everything into strings.
+The generic `Error`/`ErrorKind` pair remains the cross-boundary fallback. Use
+category-specific enums where a contract owns stable, actionable failures.
+`master_service` currently defines `ValidatorError` for master-data rules and
+`RepositoryError` for its persistence contracts; application usecase errors may
+aggregate those categories once implemented. Category enums expose
+SCREAMING_SNAKE_CASE `code()` values, use generic buckets only when no specific
+classification exists, and add entity-specific variants only for implemented
+rules. Preserve native causes through `std::error::Error::source`; `Display` is
+diagnostic, and presentation must map codes to safe responses. Never encode raw
+driver text, rejected secret values, transport status, or authentication
+semantics in an error. Test stable codes and source preservation.
 
 ## Shared Rust conventions
 
@@ -86,10 +111,20 @@ cargo clippy --all-targets -- -D warnings
 cargo test
 ```
 
-Use inline unit tests for private behavior and `tests/` for integration behavior;
-keep test doubles outside production modules. Cover behavior and failures rather
-than merely duplicating implementation. External integration tests must use
-isolated resources; state when they were skipped or unavailable.
+Use inline `#[cfg(test)]` tests for private behavior. Services that adopt the
+layered test layout keep black-box unit tests under `tests/unit/` and external
+integration tests under `tests/integration/`; keep test doubles outside production
+modules. Cover behavior and failures rather than merely duplicating
+implementation. External integration tests must use isolated resources; state
+when they were skipped or unavailable.
+
+For shared Rust changes, run from `shared/`:
+
+```sh
+cargo fmt --all -- --check
+cargo clippy --workspace --all-targets --all-features -- -D warnings
+cargo test --workspace
+```
 
 Documentation-only changes need guide discovery, content, relative-link, and
 whitespace checks. Do not run service tests as evidence of documentation accuracy.

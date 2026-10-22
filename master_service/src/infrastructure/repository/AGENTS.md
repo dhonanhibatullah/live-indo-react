@@ -63,8 +63,10 @@ raw payloads, boundary data, or connection strings.
 
 Test scope predicates, pagination, row mapping, soft-delete behavior,
 not-found/conflict/relation conversion, GeoJSON round-trips, transaction commit and
-rollback, and error logging that excludes input values. Integration tests create
-and drop isolated PostgreSQL/PostGIS databases. They use
+rollback, and error logging that excludes input values. Repository integration
+tests live in `tests/integration/infrastructure/repository/` and create and drop
+isolated PostgreSQL/PostGIS databases. They use
 `MASTER_DATABASE_TEST_DATABASE_URL` and report a skip when it is unavailable; never
-modify a developer's live database for verification. Executable schema changes
-belong in `master_database`.
+modify a developer's live database for verification. Private helper tests stay
+inline beside the implementation. Executable schema changes belong in
+`master_database`.

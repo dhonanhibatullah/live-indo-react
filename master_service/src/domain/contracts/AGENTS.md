@@ -30,8 +30,9 @@ without an async-trait macro. For async I/O, make future bounds and dispatch
 compatibility explicit when implementation requires them; use the smallest
 dependency surface that works. Document cancellation, failure,
 and retry semantics on operations that need them. Align traits, implementations,
-callers, and test doubles together. Contract tests should check observable behavior
-rather than the chosen adapter library.
+callers, and test doubles together. Object-safety checks and contract tests live
+in `tests/unit/domain/` and should check observable behavior rather than the
+chosen adapter library.
 
 ## Logger contract
 

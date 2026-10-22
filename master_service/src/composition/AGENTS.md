@@ -31,5 +31,6 @@ Master-database migrations and seeds belong in `master_database`; this scaffold
 does not run them. NGINX setup remains deferred.
 
 Test dependency construction, initialization failure cleanup, cancellation, and
-shutdown ordering when implemented. Prefer injected lifecycle controls over real
-process signals and timing-dependent sleeps in tests.
+shutdown ordering in `tests/integration/composition/` when implemented. Prefer
+injected lifecycle controls over real process signals and timing-dependent sleeps
+in tests.

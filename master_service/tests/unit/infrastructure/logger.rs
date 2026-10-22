@@ -54,28 +54,6 @@ fn context() -> AppContext {
 }
 
 #[test]
-fn configuration_values_round_trip_and_reject_invalid_input() {
-    for level in [
-        Level::None,
-        Level::Error,
-        Level::Warn,
-        Level::Info,
-        Level::Debug,
-    ] {
-        assert_eq!(level.to_string().parse::<Level>(), Ok(level));
-    }
-    for format in [Format::Plain, Format::Json] {
-        assert_eq!(format.to_string().parse::<Format>(), Ok(format));
-    }
-    for invalid in ["", "info", "TRACE", " INFO", "INFO "] {
-        assert!(invalid.parse::<Level>().is_err(), "{invalid:?}");
-    }
-    for invalid in ["", "JSON", "text", " json", "plain "] {
-        assert!(invalid.parse::<Format>().is_err(), "{invalid:?}");
-    }
-}
-
-#[test]
 fn every_threshold_filters_all_severity_methods_in_both_formats() {
     for format in [Format::Plain, Format::Json] {
         for (threshold, expected) in [

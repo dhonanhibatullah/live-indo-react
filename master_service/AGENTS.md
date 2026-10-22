@@ -37,7 +37,9 @@ src/
   presentation/
     http/                       # transport handlers and explicit wire DTOs
   composition/                  # dependency construction and lifecycle
-tests/                          # integration tests (at crate root)
+tests/
+  unit/                         # black-box unit tests by source layer
+  integration/                  # external-boundary tests
 ```
 
 Use Rust module declarations only as implementation files are added; do not create
@@ -55,6 +57,7 @@ to a service without an actual persistence requirement.
   [utilities](src/infrastructure/utility/AGENTS.md).
 - [Presentation](src/presentation/AGENTS.md).
 - [Composition](src/composition/AGENTS.md).
+- [Tests](tests/AGENTS.md).
 
 ## Service behavior and boundaries
 
@@ -114,6 +117,7 @@ cargo clippy --all-targets -- -D warnings
 cargo test
 ```
 
-Layer guides describe future behavior tests. Documentation-only changes require
-content, link, and whitespace checks; they do not require introducing tests or
-runtime dependencies. Migration/seeder and NGINX work remain deferred.
+Layer guides and the [tests guide](tests/AGENTS.md) describe behavior tests.
+Documentation-only changes require content, link, and whitespace checks; they do
+not require introducing tests or runtime dependencies. Migration/seeder and NGINX
+work remain deferred.
