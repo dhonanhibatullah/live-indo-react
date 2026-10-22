@@ -17,11 +17,23 @@ grpc/
     entity.rs geometry.rs audit.rs request.rs error.rs
   interceptor/app_context.rs
   register/{management,geographic,topic}.rs
+
+http/
+  handler/
+    management/<resource>.rs
+    geographic/<resource>.rs
+    topic/<resource>.rs
+  dto/
+    request/...
+    response/{model.rs,management.rs,geographic.rs,topic.rs,error.rs}
+  routes/{management,geographic,topic}.rs
+  middleware/{context,recovery}.rs
 ```
 
 Per-service handlers are single files under their group; they are adapters, not
-their own implementation folders. Mapper, interceptor, and registration folders
-stay separate because they are shared transport infrastructure.
+their own implementation folders. Mapper, interceptor, DTO, middleware, and
+registration folders stay separate because they are shared transport
+infrastructure.
 
 Handlers:
 - Implement generated tonic traits with `#[tonic::async_trait]`.
@@ -52,6 +64,22 @@ introduced.
 Composition constructs usecases and applies the context interceptor; presentation
 does not start the server or own process lifecycle.
 
-Use `tests/unit/presentation/grpc/` for mapping, metadata, and handler tests.
-Use `tests/integration/presentation/grpc/` for tonic transport tests with fake
+## HTTP presentation
+
+Axum routes live under `/v1`. Management writes use explicit resource routes;
+geographic and topic reads use separate lookup paths such as `by-code` and
+`by-slug`. Request DTOs reject unknown fields and carry only declared,
+client-controlled values. Response DTOs are safe wire models; boundaries use
+GeoJSON `MultiPolygon`. List responses are `{data, page}` and do not invent totals.
+
+The HTTP pipeline is recovery → context → handler. Context uses the same
+`x-trace-id`/`x-actor` metadata contract as gRPC and inserts `AppContext` into
+request extensions. `ApiError` maps `UsecaseError` to safe JSON
+`{code, message}` responses with stable HTTP statuses. Body size is limited to
+1 MiB. There is no authentication, CORS, Swagger, health route, or server startup
+in this step.
+
+Use `tests/unit/presentation/grpc/` and `tests/unit/presentation/http/` for
+mapping, metadata, and handler tests. Use
+`tests/integration/presentation/{grpc,http}/` for transport tests with fake
 usecases; no database is needed.

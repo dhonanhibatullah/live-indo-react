@@ -22,13 +22,13 @@ tests/
     domain/
     infrastructure/
     application/          # usecase tests with fake contracts
-    presentation/         # gRPC mapping, metadata, and handler tests
+    presentation/         # gRPC/HTTP mapping, metadata, and handler tests
   integration/
     main.rs
     support/              # fixtures and test doubles, never test cases
     infrastructure/
       repository/
-    presentation/         # tonic transport tests with fake usecases
+    presentation/         # gRPC and HTTP transport tests with fake usecases
     composition/          # when process lifecycle exists
 ```
 
@@ -44,7 +44,7 @@ them as a separate test crate, so they cannot access `pub(crate)` items.
 - `unit/infrastructure/`: adapters and cached repository decorators tested with
   in-memory fakes.
 - `unit/application/`: usecase behavior using fake domain contracts and validators.
-- `unit/presentation/`: gRPC DTO mapping, metadata, and safe-error tests.
+- `unit/presentation/`: gRPC/HTTP DTO mapping, metadata, and safe-error tests.
 
 Unit tests must not connect to a database, open sockets, start processes, mutate
 environment variables, or depend on wall-clock timing. Prefer deterministic
@@ -63,7 +63,7 @@ boundary being exercised:
 
 - `infrastructure/repository/`: PostgreSQL/PostGIS repository behavior, including
   coordinate and national-boundary containment.
-- `presentation/`: tonic transport and wire-contract behavior.
+- `presentation/`: tonic/Axum transport and wire-contract behavior.
 - `composition/`: future startup, dependency wiring, and shutdown behavior.
 
 Do not add integration tests for application usecases; application behavior uses
