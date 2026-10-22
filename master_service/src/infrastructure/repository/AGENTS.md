@@ -7,10 +7,12 @@ here.
 
 ## Layout and style
 
-Adapters are grouped by entity with `mod.rs`, `postgres.rs`, and
-`postgres_query.rs`. Shared query predicates, scan functions, GeoJSON conversion,
-and error classification live under `shared/`. Concrete adapters use
-`Postgres<Entity>` names and are re-exported from `repository/mod.rs`.
+Adapters are grouped by entity with `mod.rs`, `postgres.rs`,
+`postgres_query.rs`, and `cached.rs`. Shared query predicates, scan functions,
+GeoJSON conversion, cache namespaces, and error classification live under
+`shared/`. Concrete PostgreSQL adapters use `Postgres<Entity>` names; cache-aside
+decorators use `Cached<Entity>` names. Both are re-exported from
+`repository/mod.rs`.
 
 Repository traits return the object-safe `RepositoryFuture<'a, T>` from
 `domain/contracts/repository/future.rs`. Implementations return
@@ -38,6 +40,31 @@ contains matching.
 Preserve parent relationships through the existing foreign keys and map their
 constraint names to entity-specific relation errors. A soft-deleted parent remains
 physically referenceable.
+
+## Cached decorators
+
+`Cached<Entity>` wraps `Arc<dyn EntityRepository>` and `Arc<dyn Cache>`. All
+`find_by_*` methods use `CacheKind::Individual`; `list` uses `CacheKind::List`.
+Reads are cache-aside: return a hit, otherwise call the inner repository and cache
+only successful values. Do not cache `None`; empty lists are successful list
+results. Recheck the namespace generation before inserting so a concurrent write
+cannot repopulate an invalidated generation. Reads carrying any `AppContext`
+transaction bypass the cache entirely.
+
+Writes always call the inner repository and are never cached. A write-scoped
+`InvalidationGuard` advances the entity generation on drop, covering successful,
+failed, and canceled writes. Generation bumps make old keys unreachable; Moka TTL
+and capacity eventually evict them. Do not hold locks across `.await`, and do not
+add distributed or commit-aware invalidation here. Successful transactional writes
+invalidate before commit; TTLs bound the resulting local race. Keys use
+`master:v1:<entity>:g<generation>:<kind>:<discriminator>`; list keys hash every
+filter and pagination field. Composition must construct one decorated instance per
+entity; separate decorator instances have independent generations.
+
+Test cache hits, misses, filter-key separation, write invalidation, transaction
+bypass, and cancellation using in-memory fakes in
+`tests/unit/infrastructure/repository/`. Keep PostgreSQL integration behavior
+unchanged.
 
 ## Transactions and resources
 

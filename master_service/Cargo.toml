@@ -15,6 +15,7 @@ path = "tests/integration/main.rs"
 [dependencies]
 chrono = { version = "0.4", default-features = false, features = ["std"] }
 futures-util = { version = "0.3", default-features = false, features = ["std"] }
+moka = { version = "0.12", default-features = false, features = ["sync"] }
 pgdt = { path = "../shared/crates/pgdt", features = ["chrono"] }
 regex = "1"
 serde_json = "1"

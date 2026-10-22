@@ -41,7 +41,8 @@ first test exists.
 them as a separate test crate, so they cannot access `pub(crate)` items.
 
 - `unit/domain/`: pure model, error-code, value-invariant, and contract tests.
-- `unit/infrastructure/`: adapters tested with in-memory fakes.
+- `unit/infrastructure/`: adapters and cached repository decorators tested with
+  in-memory fakes.
 - `unit/application/`: future usecase tests using fake domain contracts.
 - `unit/presentation/`: future DTO, mapping, and safe-error tests.
 
@@ -51,8 +52,9 @@ inputs and capturing test doubles. Keep one capability per file and one observab
 behavior per test.
 
 Private helpers remain covered by inline `#[cfg(test)]` modules beside the code.
-Do not widen visibility or import source files with `#[path]` merely to move those
-tests into `tests/unit/`.
+Moka expiry callbacks, cache key generations, and invalidation guards are private
+behavior and are tested inline without sleeping. Do not widen visibility or import
+source files with `#[path]` merely to move those tests into `tests/unit/`.
 
 ## Integration tests
 

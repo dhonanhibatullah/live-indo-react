@@ -17,4 +17,8 @@ pub struct AppEnv {
     pub postgres_ssl_mode: String,
     pub postgres_max_connections: u32,
     pub postgres_connect_timeout: Duration,
+
+    pub cache_max_capacity: u64,
+    pub cache_individual_ttl: Duration,
+    pub cache_list_ttl: Duration,
 }

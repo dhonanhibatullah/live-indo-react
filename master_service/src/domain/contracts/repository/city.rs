@@ -77,7 +77,7 @@ pub struct UpdateArgs {
     pub is_active: Option<bool>,
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ListArgs {
     pub province_id: Option<i64>,
     pub kind: Option<CityKind>,

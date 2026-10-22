@@ -47,7 +47,7 @@ pub struct UpdateArgs {
     pub is_active: Option<bool>,
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ListArgs {
     pub is_active: Option<bool>,
     pub include_deleted: bool,

@@ -11,7 +11,7 @@ pub use province::ProvinceRepository;
 pub use topic::TopicRepository;
 
 /// Offset pagination shared by list operations.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct Pagination {
     pub limit: u32,
     pub offset: u32,

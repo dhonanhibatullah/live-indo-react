@@ -1,4 +1,5 @@
 mod app_models;
+mod cache_contract;
 mod category_errors;
 mod domain_error;
 mod entity_models;

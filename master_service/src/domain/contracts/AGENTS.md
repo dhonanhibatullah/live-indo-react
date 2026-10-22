@@ -5,11 +5,12 @@ guide](../../../AGENTS.md); implementations belong in infrastructure.
 
 ## Layout and declarations
 
-Group persistence traits under `repository/` and external technical capabilities
-under `utility/` as they are introduced. Use one focused module per capability.
-Declare the trait before related argument and result structs. Use meaningful Rust
-names, explicit entity/filter scope, and `Result` for failures. Expose domain
-values rather than drivers, sockets, SDK errors, or framework contexts.
+Group persistence traits under `repository/`, the master-data cache contract under
+`caching/`, and other external technical capabilities under `utility/`. Use one
+focused module per capability. Declare the trait before related argument and result
+structs. Use meaningful Rust names, explicit entity/filter scope, and `Result` for
+failures. Expose domain values rather than drivers, sockets, SDK errors, or
+framework contexts.
 
 Introduce master-data persistence and external lookup capabilities only when a
 feature needs them. Every repository method takes `&AppContext` first, then the
@@ -26,13 +27,27 @@ symmetry.
 Choose generics or object-safe traits deliberately. Master repository traits are
 object-safe through `RepositoryFuture<'a, T>`, a boxed `Send` future with an
 explicit context/self lifetime. This supports `Arc<dyn Repository>` composition
-without an async-trait macro. For async I/O, make future bounds and dispatch
-compatibility explicit when implementation requires them; use the smallest
-dependency surface that works. Document cancellation, failure,
+without an async-trait macro. The cache contract is synchronous and object-safe
+because its selected adapter is process-local. For async I/O, make future bounds
+and dispatch compatibility explicit when implementation requires them; use the
+smallest dependency surface that works. Document cancellation, failure,
 and retry semantics on operations that need them. Align traits, implementations,
 callers, and test doubles together. Object-safety checks and contract tests live
 in `tests/unit/domain/` and should check observable behavior rather than the
 chosen adapter library.
+
+## Cache contract
+
+`caching/cache.rs` defines the object-safe `Cache: Send + Sync` trait,
+`caching/value.rs` defines `CacheValue`, and `caching/kind.rs` defines
+`CacheKind`; `mod.rs` declares and re-exports them. `CacheValue` stores owned
+domain values behind `Arc<dyn Any + Send + Sync>` and exposes typed downcasting,
+so the contract does not import serialization libraries or infrastructure types.
+`get`, `set`, and `remove` take `&AppContext` first; missing and expired entries
+are ordinary misses. `CacheKind::{Individual, List}` selects the adapter's
+configured TTL. Cache operations are best effort and have no domain error type.
+Keys are caller-scoped and must keep individual reads and list queries distinct.
+Callers must not cache data from an active transaction.
 
 ## Logger contract
 
