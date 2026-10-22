@@ -6,12 +6,7 @@ CREATE TABLE polling_methods (
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ,
-    deleted_at TIMESTAMPTZ,
-
-    CONSTRAINT ck_polling_methods_code_format
-        CHECK (code ~ '^[a-z]+(_[a-z]+)*$'),
-    CONSTRAINT ck_polling_methods_name_not_blank
-        CHECK (length(btrim(name)) > 0)
+    deleted_at TIMESTAMPTZ
 );
 
 CREATE UNIQUE INDEX uq_polling_methods_code ON polling_methods (code);

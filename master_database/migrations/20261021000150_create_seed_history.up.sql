@@ -2,14 +2,7 @@ CREATE TABLE seed_history (
     version BIGINT PRIMARY KEY,
     filename TEXT NOT NULL,
     checksum_sha256 VARCHAR(64) NOT NULL,
-    applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-
-    CONSTRAINT ck_seed_history_version_positive
-        CHECK (version > 0),
-    CONSTRAINT ck_seed_history_filename_format
-        CHECK (filename ~ '^[0-9]+_[a-z0-9_]+[.]json$'),
-    CONSTRAINT ck_seed_history_checksum_sha256_format
-        CHECK (checksum_sha256 ~ '^[0-9a-f]{64}$')
+    applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE UNIQUE INDEX uq_seed_history_filename ON seed_history (filename);

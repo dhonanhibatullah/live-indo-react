@@ -8,16 +8,7 @@ CREATE TABLE provinces (
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ,
-    deleted_at TIMESTAMPTZ,
-
-    CONSTRAINT ck_provinces_code_format
-        CHECK (kemendagri_code ~ '^[0-9]{2}$'),
-    CONSTRAINT ck_provinces_name_not_blank
-        CHECK (length(btrim(name)) > 0),
-    CONSTRAINT ck_provinces_boundary_source_not_blank
-        CHECK (length(btrim(boundary_source)) > 0),
-    CONSTRAINT ck_provinces_boundary_valid
-        CHECK (ST_IsValid(boundary) AND NOT ST_IsEmpty(boundary))
+    deleted_at TIMESTAMPTZ
 );
 
 -- Codes remain reserved after soft deletion.

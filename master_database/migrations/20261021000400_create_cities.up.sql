@@ -16,15 +16,7 @@ CREATE TABLE cities (
 
     CONSTRAINT fk_cities_province
         FOREIGN KEY (province_id) REFERENCES provinces (id)
-        ON DELETE RESTRICT ON UPDATE RESTRICT,
-    CONSTRAINT ck_cities_code_format
-        CHECK (kemendagri_code ~ '^[0-9]{2}[.][0-9]{2}$'),
-    CONSTRAINT ck_cities_name_not_blank
-        CHECK (length(btrim(name)) > 0),
-    CONSTRAINT ck_cities_boundary_source_not_blank
-        CHECK (length(btrim(boundary_source)) > 0),
-    CONSTRAINT ck_cities_boundary_valid
-        CHECK (ST_IsValid(boundary) AND NOT ST_IsEmpty(boundary))
+        ON DELETE RESTRICT ON UPDATE RESTRICT
 );
 
 -- Codes remain reserved after soft deletion. The parent ID leads the listing index.

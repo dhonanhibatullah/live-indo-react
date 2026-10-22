@@ -12,14 +12,7 @@ CREATE TABLE topics (
 
     CONSTRAINT fk_topics_polling_method
         FOREIGN KEY (polling_method_id) REFERENCES polling_methods (id)
-        ON DELETE RESTRICT ON UPDATE RESTRICT,
-    CONSTRAINT ck_topics_selection_options_shape
-        CHECK (cardinality(selection_options) = 0 OR
-            (array_ndims(selection_options) = 1 AND array_lower(selection_options, 1) = 1)),
-    CONSTRAINT ck_topics_slug_format
-        CHECK (slug ~ '^[a-z0-9]+(-[a-z0-9]+)*$'),
-    CONSTRAINT ck_topics_name_not_blank
-        CHECK (length(btrim(name)) > 0)
+        ON DELETE RESTRICT ON UPDATE RESTRICT
 );
 
 -- Slugs remain reserved after soft deletion.
