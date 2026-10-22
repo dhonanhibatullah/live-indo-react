@@ -16,19 +16,19 @@ The three backend services are Rust 2024 crates with implemented generic domain 
 logger models, logger utility contracts, and writer adapters. `master_service` also has
 master-data entity models, object-safe repository contracts and PostgreSQL adapters,
 cached repository decorators, a Moka in-memory cache contract and adapter, a validator
-contract and regex adapter, grouped management/geographic/topic usecases, application implementations, and
-gRPC plus Axum HTTP presentation adapters, and app context/config models with
-cache settings.
+contract and regex adapter, grouped management/geographic/topic usecases,
+application implementations, gRPC plus Axum HTTP presentation adapters, typed
+environment loading, and composition/runtime lifecycle wiring.
 `shared/` is a separate Rust workspace for explicitly shared libraries; its `pgdt`
 crate provides context-aware PostgreSQL execution and transaction orchestration
 for the master repository adapters. `shared/proto/` contains the master-service
-gRPC contracts and checked-in Rust/TypeScript bindings. All `src/main.rs`
-entrypoints remain placeholders. The remaining documented source layouts
-are targets, not implemented modules. Do not describe proposed behavior as already
-available. Add source files and dependencies only when implementing a feature that needs
-them.
+gRPC contracts and checked-in Rust/TypeScript bindings. `master_service` now has
+a runnable composition root that loads settings, connects PostgreSQL, wires both
+transports, and drains them on shutdown. `reaction_service` and
+`broadcast_service` entrypoints remain placeholders. Do not describe their
+proposed behavior as already available.
 
-- `master_service/`: master-data service scaffold for topics, polling methods, and
+- `master_service/`: master-data service for topics, polling methods, and
   Indonesian regions. Read its [service guide](master_service/AGENTS.md).
 - `shared/`: independent Rust workspace for reusable crates. See the
   [`pgdt` guide](shared/crates/pgdt/README.md) and
