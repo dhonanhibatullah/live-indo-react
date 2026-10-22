@@ -1,0 +1,27 @@
+[package]
+name = "pgdt"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+description = "Context-aware PostgreSQL execution and transactions using native SQLx types"
+
+[features]
+default = ["tls-rustls-ring"]
+tls-rustls-ring = ["sqlx/tls-rustls-ring-webpki"]
+json = ["sqlx/json"]
+time = ["sqlx/time"]
+uuid = ["sqlx/uuid"]
+macros = ["sqlx/macros"]
+
+[dependencies]
+async-stream.workspace = true
+futures-core.workspace = true
+futures-util.workspace = true
+sqlx.workspace = true
+tokio.workspace = true
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["macros", "rt-multi-thread", "time"] }
+serde_json.workspace = true
+time.workspace = true
+uuid.workspace = true
