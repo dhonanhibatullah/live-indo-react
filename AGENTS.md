@@ -16,11 +16,13 @@ The three backend services are Rust 2024 crates with implemented generic domain 
 logger models, logger utility contracts, and writer adapters. `master_service` also has
 master-data entity models, object-safe repository contracts and PostgreSQL adapters,
 cached repository decorators, a Moka in-memory cache contract and adapter, a validator
-contract and regex adapter, and app context/config models with cache settings.
+contract and regex adapter, grouped management/geographic/topic usecases and
+application implementations, and app context/config models with cache settings.
 `shared/` is a separate Rust workspace for explicitly shared libraries; its `pgdt`
 crate provides context-aware PostgreSQL execution and transaction orchestration
-for the master repository adapters. All `src/main.rs` entrypoints remain
-placeholders. The remaining documented source layouts
+for the master repository adapters. `shared/proto/` contains the master-service
+gRPC contracts and checked-in Rust/TypeScript bindings. All `src/main.rs`
+entrypoints remain placeholders. The remaining documented source layouts
 are targets, not implemented modules. Do not describe proposed behavior as already
 available. Add source files and dependencies only when implementing a feature that needs
 them.
@@ -28,7 +30,8 @@ them.
 - `master_service/`: master-data service scaffold for topics, polling methods, and
   Indonesian regions. Read its [service guide](master_service/AGENTS.md).
 - `shared/`: independent Rust workspace for reusable crates. See the
-  [`pgdt` guide](shared/crates/pgdt/README.md).
+  [`pgdt` guide](shared/crates/pgdt/README.md) and
+  [`proto` guide](shared/proto/README.md).
 - `reaction_service/`: accepts and inserts anonymous reactions/comments. Read its
   [service guide](reaction_service/AGENTS.md).
 - `broadcast_service/`: broadcasts accepted reactions, primarily over WebSockets.

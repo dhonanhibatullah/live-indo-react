@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package live_indo_react.master.v1;
+
+message Coordinate {
+  double longitude = 1;
+  double latitude = 2;
+}
+
+message Ring {
+  repeated Coordinate positions = 1;
+}
+
+message Polygon {
+  repeated Ring rings = 1;
+}
+
+message MultiPolygon {
+  repeated Polygon polygons = 1;
+}

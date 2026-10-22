@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package live_indo_react.master.v1;
+
+import "live_indo_react/master/v1/common/geometry.proto";
+import "live_indo_react/master/v1/common/models.proto";
+
+service ManagementIndonesiaBoundaryService {
+  rpc UpdateIndonesiaBoundary(UpdateIndonesiaBoundaryRequest)
+      returns (UpdateIndonesiaBoundaryResponse);
+}
+
+message UpdateIndonesiaBoundaryRequest {
+  optional live_indo_react.master.v1.MultiPolygon boundary = 1;
+  optional string boundary_source = 2;
+  oneof boundary_reference_date_change {
+    live_indo_react.master.v1.Date boundary_reference_date = 3;
+    bool clear_boundary_reference_date = 4;
+  }
+}
+
+message UpdateIndonesiaBoundaryResponse {
+  live_indo_react.master.v1.IndonesiaBoundary boundary = 1;
+}

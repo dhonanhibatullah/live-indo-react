@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package live_indo_react.master.v1;
+
+service GeographicIndonesiaService {
+  rpc IsInsideIndonesia(IsInsideIndonesiaRequest) returns (IsInsideIndonesiaResponse);
+}
+
+message IsInsideIndonesiaRequest {
+  double longitude = 1;
+  double latitude = 2;
+}
+
+message IsInsideIndonesiaResponse {
+  bool inside = 1;
+}

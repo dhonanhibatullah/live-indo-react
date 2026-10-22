@@ -1,0 +1,43 @@
+syntax = "proto3";
+
+package live_indo_react.master.v1;
+
+import "live_indo_react/master/v1/common/models.proto";
+
+service ManagementTopicService {
+  rpc CreateTopic(CreateTopicRequest) returns (CreateTopicResponse);
+  rpc UpdateTopic(UpdateTopicRequest) returns (UpdateTopicResponse);
+  rpc DeleteTopic(DeleteTopicRequest) returns (DeleteTopicResponse);
+}
+
+message CreateTopicRequest {
+  string slug = 1;
+  string name = 2;
+  string description = 3;
+  int64 polling_method_id = 4;
+  repeated string selection_options = 5;
+  bool is_active = 6;
+}
+
+message CreateTopicResponse {
+  live_indo_react.master.v1.Topic topic = 1;
+}
+
+message UpdateTopicRequest {
+  int64 id = 1;
+  optional string name = 2;
+  optional string description = 3;
+  optional int64 polling_method_id = 4;
+  optional live_indo_react.master.v1.StringList selection_options = 5;
+  optional bool is_active = 6;
+}
+
+message UpdateTopicResponse {
+  live_indo_react.master.v1.Topic topic = 1;
+}
+
+message DeleteTopicRequest {
+  int64 id = 1;
+}
+
+message DeleteTopicResponse {}

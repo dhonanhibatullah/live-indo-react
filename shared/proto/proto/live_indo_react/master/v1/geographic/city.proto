@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package live_indo_react.master.v1;
+
+import "live_indo_react/master/v1/common/models.proto";
+
+service GeographicCityService {
+  rpc GetCityById(GetCityByIdRequest) returns (GetCityByIdResponse);
+  rpc GetCityByKemendagriCode(GetCityByKemendagriCodeRequest)
+      returns (GetCityByKemendagriCodeResponse);
+}
+
+message GetCityByIdRequest {
+  int64 id = 1;
+}
+
+message GetCityByIdResponse {
+  live_indo_react.master.v1.City city = 1;
+}
+
+message GetCityByKemendagriCodeRequest {
+  string kemendagri_code = 1;
+}
+
+message GetCityByKemendagriCodeResponse {
+  live_indo_react.master.v1.City city = 1;
+}

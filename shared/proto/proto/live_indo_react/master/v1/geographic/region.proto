@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package live_indo_react.master.v1;
+
+import "live_indo_react/master/v1/common/models.proto";
+
+service GeographicRegionService {
+  rpc GetRegionByCoord(GetRegionByCoordRequest) returns (GetRegionByCoordResponse);
+}
+
+message GetRegionByCoordRequest {
+  double longitude = 1;
+  double latitude = 2;
+}
+
+message GetRegionByCoordResponse {
+  live_indo_react.master.v1.Region region = 1;
+}

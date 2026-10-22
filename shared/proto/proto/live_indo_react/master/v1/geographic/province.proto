@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package live_indo_react.master.v1;
+
+import "live_indo_react/master/v1/common/models.proto";
+
+service GeographicProvinceService {
+  rpc GetProvinceById(GetProvinceByIdRequest) returns (GetProvinceByIdResponse);
+  rpc GetProvinceByKemendagriCode(GetProvinceByKemendagriCodeRequest)
+      returns (GetProvinceByKemendagriCodeResponse);
+}
+
+message GetProvinceByIdRequest {
+  int64 id = 1;
+}
+
+message GetProvinceByIdResponse {
+  live_indo_react.master.v1.Province province = 1;
+}
+
+message GetProvinceByKemendagriCodeRequest {
+  string kemendagri_code = 1;
+}
+
+message GetProvinceByKemendagriCodeResponse {
+  live_indo_react.master.v1.Province province = 1;
+}

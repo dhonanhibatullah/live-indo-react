@@ -1,0 +1,8 @@
+syntax = "proto3";
+
+package live_indo_react.master.v1;
+
+message PageRequest {
+  uint32 limit = 1;
+  uint32 offset = 2;
+}

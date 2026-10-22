@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+package live_indo_react.master.v1;
+
+import "live_indo_react/master/v1/common/models.proto";
+import "live_indo_react/master/v1/common/pagination.proto";
+
+service TopicPollingMethodService {
+  rpc ListAvailablePollingMethods(ListAvailablePollingMethodsRequest)
+      returns (ListAvailablePollingMethodsResponse);
+  rpc GetPollingMethodByCode(GetPollingMethodByCodeRequest)
+      returns (GetPollingMethodByCodeResponse);
+}
+
+message ListAvailablePollingMethodsRequest {
+  live_indo_react.master.v1.PageRequest page = 1;
+}
+
+message ListAvailablePollingMethodsResponse {
+  repeated live_indo_react.master.v1.PollingMethod polling_methods = 1;
+}
+
+message GetPollingMethodByCodeRequest {
+  string code = 1;
+}
+
+message GetPollingMethodByCodeResponse {
+  live_indo_react.master.v1.PollingMethod polling_method = 1;
+}

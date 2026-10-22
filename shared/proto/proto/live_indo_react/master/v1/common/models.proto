@@ -1,0 +1,85 @@
+syntax = "proto3";
+
+package live_indo_react.master.v1;
+
+import "google/protobuf/timestamp.proto";
+import "live_indo_react/master/v1/common/geometry.proto";
+
+message Date {
+  int32 year = 1;
+  int32 month = 2;
+  int32 day = 3;
+}
+
+message AuditFields {
+  google.protobuf.Timestamp created_at = 1;
+  google.protobuf.Timestamp updated_at = 2;
+  google.protobuf.Timestamp deleted_at = 3;
+}
+
+message StringList {
+  repeated string values = 1;
+}
+
+enum CityKind {
+  CITY_KIND_UNSPECIFIED = 0;
+  CITY_KIND_CITY = 1;
+  CITY_KIND_REGENCY = 2;
+}
+
+message Topic {
+  int64 id = 1;
+  string slug = 2;
+  string name = 3;
+  string description = 4;
+  int64 polling_method_id = 5;
+  repeated string selection_options = 6;
+  bool is_active = 7;
+  AuditFields audit = 100;
+}
+
+message PollingMethod {
+  int64 id = 1;
+  string code = 2;
+  string name = 3;
+  string description = 4;
+  bool is_active = 5;
+  AuditFields audit = 100;
+}
+
+message Province {
+  int64 id = 1;
+  string kemendagri_code = 2;
+  string name = 3;
+  MultiPolygon boundary = 4;
+  string boundary_source = 5;
+  Date boundary_reference_date = 6;
+  bool is_active = 7;
+  AuditFields audit = 100;
+}
+
+message City {
+  int64 id = 1;
+  int64 province_id = 2;
+  string kemendagri_code = 3;
+  CityKind kind = 4;
+  string name = 5;
+  MultiPolygon boundary = 6;
+  string boundary_source = 7;
+  Date boundary_reference_date = 8;
+  bool is_active = 9;
+  AuditFields audit = 100;
+}
+
+message IndonesiaBoundary {
+  int64 id = 1;
+  MultiPolygon boundary = 2;
+  string boundary_source = 3;
+  Date boundary_reference_date = 4;
+  AuditFields audit = 100;
+}
+
+message Region {
+  Province province = 1;
+  City city = 2;
+}

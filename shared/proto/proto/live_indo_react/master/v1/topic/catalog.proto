@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+package live_indo_react.master.v1;
+
+import "live_indo_react/master/v1/common/models.proto";
+import "live_indo_react/master/v1/common/pagination.proto";
+
+service TopicCatalogService {
+  rpc ListActiveTopics(ListActiveTopicsRequest) returns (ListActiveTopicsResponse);
+  rpc GetTopicBySlug(GetTopicBySlugRequest) returns (GetTopicBySlugResponse);
+}
+
+message ListActiveTopicsRequest {
+  optional int64 polling_method_id = 1;
+  optional string name_contains = 2;
+  live_indo_react.master.v1.PageRequest page = 3;
+}
+
+message ListActiveTopicsResponse {
+  repeated live_indo_react.master.v1.Topic topics = 1;
+}
+
+message GetTopicBySlugRequest {
+  string slug = 1;
+}
+
+message GetTopicBySlugResponse {
+  live_indo_react.master.v1.Topic topic = 1;
+}

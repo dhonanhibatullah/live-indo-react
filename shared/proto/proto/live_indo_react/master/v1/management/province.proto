@@ -1,0 +1,47 @@
+syntax = "proto3";
+
+package live_indo_react.master.v1;
+
+import "live_indo_react/master/v1/common/geometry.proto";
+import "live_indo_react/master/v1/common/models.proto";
+
+service ManagementProvinceService {
+  rpc CreateProvince(CreateProvinceRequest) returns (CreateProvinceResponse);
+  rpc UpdateProvince(UpdateProvinceRequest) returns (UpdateProvinceResponse);
+  rpc DeleteProvince(DeleteProvinceRequest) returns (DeleteProvinceResponse);
+}
+
+message CreateProvinceRequest {
+  string kemendagri_code = 1;
+  string name = 2;
+  live_indo_react.master.v1.MultiPolygon boundary = 3;
+  string boundary_source = 4;
+  optional live_indo_react.master.v1.Date boundary_reference_date = 5;
+  bool is_active = 6;
+}
+
+message CreateProvinceResponse {
+  live_indo_react.master.v1.Province province = 1;
+}
+
+message UpdateProvinceRequest {
+  int64 id = 1;
+  optional string name = 2;
+  optional live_indo_react.master.v1.MultiPolygon boundary = 3;
+  optional string boundary_source = 4;
+  oneof boundary_reference_date_change {
+    live_indo_react.master.v1.Date boundary_reference_date = 5;
+    bool clear_boundary_reference_date = 6;
+  }
+  optional bool is_active = 7;
+}
+
+message UpdateProvinceResponse {
+  live_indo_react.master.v1.Province province = 1;
+}
+
+message DeleteProvinceRequest {
+  int64 id = 1;
+}
+
+message DeleteProvinceResponse {}

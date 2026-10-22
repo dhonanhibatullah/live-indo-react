@@ -1,0 +1,50 @@
+syntax = "proto3";
+
+package live_indo_react.master.v1;
+
+import "live_indo_react/master/v1/common/geometry.proto";
+import "live_indo_react/master/v1/common/models.proto";
+
+service ManagementCityService {
+  rpc CreateCity(CreateCityRequest) returns (CreateCityResponse);
+  rpc UpdateCity(UpdateCityRequest) returns (UpdateCityResponse);
+  rpc DeleteCity(DeleteCityRequest) returns (DeleteCityResponse);
+}
+
+message CreateCityRequest {
+  int64 province_id = 1;
+  string kemendagri_code = 2;
+  live_indo_react.master.v1.CityKind kind = 3;
+  string name = 4;
+  live_indo_react.master.v1.MultiPolygon boundary = 5;
+  string boundary_source = 6;
+  optional live_indo_react.master.v1.Date boundary_reference_date = 7;
+  bool is_active = 8;
+}
+
+message CreateCityResponse {
+  live_indo_react.master.v1.City city = 1;
+}
+
+message UpdateCityRequest {
+  int64 id = 1;
+  optional live_indo_react.master.v1.CityKind kind = 2;
+  optional string name = 3;
+  optional live_indo_react.master.v1.MultiPolygon boundary = 4;
+  optional string boundary_source = 5;
+  oneof boundary_reference_date_change {
+    live_indo_react.master.v1.Date boundary_reference_date = 6;
+    bool clear_boundary_reference_date = 7;
+  }
+  optional bool is_active = 8;
+}
+
+message UpdateCityResponse {
+  live_indo_react.master.v1.City city = 1;
+}
+
+message DeleteCityRequest {
+  int64 id = 1;
+}
+
+message DeleteCityResponse {}
