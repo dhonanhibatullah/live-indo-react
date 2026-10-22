@@ -8,6 +8,7 @@ description = "Context-aware PostgreSQL execution and transactions using native 
 [features]
 default = ["tls-rustls-ring"]
 tls-rustls-ring = ["sqlx/tls-rustls-ring-webpki"]
+chrono = ["sqlx/chrono"]
 json = ["sqlx/json"]
 time = ["sqlx/time"]
 uuid = ["sqlx/uuid"]

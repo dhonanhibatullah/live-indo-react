@@ -100,7 +100,7 @@ There are no automatic retries or crate-generated logs.
 ## Features
 
 - Default: `tls-rustls-ring`, using SQLx's Rustls/ring backend with WebPKI roots.
-- Optional: `json`, `time`, `uuid`, and `macros`, forwarding SQLx type/macro support.
+- Optional: `chrono`, `json`, `time`, `uuid`, and `macros`, forwarding SQLx type/macro support.
 - `--no-default-features` supports connections without TLS.
 
 Consumers build their queries using SQLx or a compatible query builder such as
