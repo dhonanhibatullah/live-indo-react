@@ -6,31 +6,42 @@ in their respective layers; composition is explicit wiring, not a service locato
 
 ## Layout and startup
 
-Use focused modules such as `driver.rs`, `infrastructure.rs`, `application.rs`,
-`presentation.rs`, and `launcher.rs` when their responsibilities exist. Keep
-`src/main.rs` thin and delegate launch to composition. Load and validate typed
-settings through `src/config.rs`, then inject settings into constructors. Do not
-copy Lockmate's Go global configuration pattern into Rust.
+Composition roots live beside each other under `src/composition/`; the current
+server root is `main/`. A future composition can add another root without mixing
+its wiring into `main/`.
 
-Initialize resources before constructing dependent adapters and usecases. Start
-listeners/consumers only after required initialization succeeds. Retain handles
-for owned tasks and resources. Do not add a database, event broker, async runtime,
-or HTTP framework just to match a reference project's dependency list.
+Focused `main/` modules own one part of the runtime:
+
+- `main/driver.rs`: structured stdout logger and PostgreSQL/SQLx pool construction.
+- `main/infrastructure.rs`: Moka cache, validator, context factory, and cached
+  repository adapters over one shared `Pgdt`.
+- `main/application.rs`: usecase implementations and their explicit dependencies.
+- `main/presentation.rs`: HTTP router and gRPC `Routes` built from the same usecases.
+- `main/launcher.rs`: settings loading, startup ordering, listeners, signals, and
+  bounded cleanup.
+
+Keep `src/main.rs` thin and delegate to `composition::launch`. Typed settings come
+from `src/config/app.rs` and `src/config/env.rs`; composition injects them into
+constructors. Do not parse environment variables outside the config module or copy
+Lockmate's Go global configuration pattern.
+
+Initialize resources before constructing dependent adapters and usecases. Build
+the database pool before infrastructure, and build usecases before presentation.
+Bind both listeners before logging readiness. Do not run migrations or seeds here;
+`master_database` prepares the schema. Do not add a broker or unrelated service
+wiring by analogy.
 
 ## Lifecycle and failures
 
-Wire master-data presentation to domain usecase implementations and their
-explicit dependencies. On shutdown, stop new requests, drain in-flight operations
-within a bounded deadline, then close owned resources in dependency order. Do not
-wire reaction submission or broadcast fan-out into this service by analogy.
+HTTP and gRPC listen on separate configured addresses and share usecase instances,
+repositories, and cache state. Both drain on SIGINT/SIGTERM within the configured
+deadline, then the PostgreSQL pool closes. If a listener or server fails, stop the
+other transport and close the pool before returning failure.
 
-Surface startup failures with an unsuccessful exit; normal signal-driven shutdown
-should exit successfully. Apply a bounded shutdown deadline and clean up partially
-initialized resources on failure. Do not dump settings or connection strings.
-Master-database migrations and seeds belong in `master_database`; this scaffold
-does not run them. NGINX setup remains deferred.
+Surface configuration, database, bind, serve, and shutdown failures with a
+non-zero exit; normal signal-driven shutdown exits zero. Force-close remaining
+tasks when the drain deadline expires. Do not dump settings, passwords,
+connection strings, or request data.
 
-Test dependency construction, initialization failure cleanup, cancellation, and
-shutdown ordering in `tests/integration/composition/` when implemented. Prefer
-injected lifecycle controls over real process signals and timing-dependent sleeps
-in tests.
+`launch_with` accepts an injected shutdown future for tests. Prefer local
+listeners, fake usecases, and channels over real process signals and sleeps.

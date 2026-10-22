@@ -29,7 +29,7 @@ tests/
     infrastructure/
       repository/
     presentation/         # gRPC and HTTP transport tests with fake usecases
-    composition/          # when process lifecycle exists
+    composition/          # startup wiring, bind failures, and shutdown
 ```
 
 Do not create empty `mod.rs` files for future layers. Add a module only when its
@@ -64,7 +64,9 @@ boundary being exercised:
 - `infrastructure/repository/`: PostgreSQL/PostGIS repository behavior, including
   coordinate and national-boundary containment.
 - `presentation/`: tonic/Axum transport and wire-contract behavior.
-- `composition/`: future startup, dependency wiring, and shutdown behavior.
+- `composition/`: startup dependency wiring and bounded shutdown behavior. The
+  launcher's signal-free listener test stays inline because it exercises private
+  orchestration.
 
 Do not add integration tests for application usecases; application behavior uses
 fakes in `unit/application/`. Domain values do not need external integration

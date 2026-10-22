@@ -22,10 +22,12 @@ PostgreSQL/PostGIS repository adapters for all four master entities use
 `shared/crates/pgdt` and SQLx, including the `AppContext` transaction bridge.
 Validator field-format, nonblank, selection-option, and city/province-code rules
 replace the former master-table CHECK constraints. JSON formatting uses
-`serde_json` only in infrastructure. `AppEnv` includes cache capacity plus
-separate individual and list TTLs, but configuration loading and composition are
-not implemented. `src/main.rs` remains a placeholder. The remaining modules below
-are the target architecture, not an implemented master-data runtime.
+`serde_json` only in infrastructure. `AppEnv` includes logger, PostgreSQL, cache,
+listener, and shutdown settings. `src/config/` loads an optional `.env` with process
+variables taking precedence. `src/composition/` constructs one shared `Pgdt`, all
+cached repositories, usecases, and both transports, then serves HTTP and gRPC on
+separate listeners with bounded graceful shutdown. `src/main.rs` delegates to
+`composition::launch`. Migrations and seeds remain external in `master_database`.
 
 ## Target source layout
 
@@ -33,7 +35,9 @@ are the target architecture, not an implemented master-data runtime.
 src/
   lib.rs                        # domain and infrastructure library boundary
   main.rs                       # thin entrypoint delegating to composition
-  config.rs                     # typed settings and environment loading
+  config/
+    app.rs                      # compile-time service metadata
+    env.rs                      # typed environment and .env loading
   domain/
     models/                     # domain vocabulary and classified errors
     contracts/                  # repository, caching, and utility traits
@@ -45,7 +49,8 @@ src/
     utility/                    # external integrations and technical adapters
   presentation/
     http/                       # transport handlers and explicit wire DTOs
-  composition/                  # dependency construction and lifecycle
+  composition/
+    main/                       # server dependency construction and lifecycle
 tests/
   unit/                         # black-box unit tests by source layer
   integration/                  # external-boundary tests
@@ -73,9 +78,9 @@ to a service without an actual persistence requirement.
 
 Presentation maps transport input to domain usecase requests. Application owns
 business validation and calls injected domain contracts. Infrastructure implements
-those contracts against selected drivers or providers. Usecase implementations
-and unary gRPC plus Axum HTTP presentation adapters are available, but server
-composition/lifecycle wiring is not implemented by this scaffold.
+those contracts against selected drivers or providers. Usecase implementations,
+unary gRPC plus Axum HTTP presentation adapters, and the composition/runtime
+lifecycle are available. Configuration is read only through `src/config/`.
 
 The master schema lives in [master_database/docs/erd.dbml](../master_database/docs/erd.dbml).
 The validator preserves stable topic slugs and regional/method code formats and
@@ -92,10 +97,10 @@ contracts with consumers. Do not add authentication, routes, write permissions,
 cache behavior beyond the explicit master-data cache contract, or publication
 guarantees by analogy; those are feature decisions.
 The PostgreSQL/PostGIS schema, SQLx/`pgdt` repository adapters, Moka cache adapter,
-cached repository decorators, national-boundary adapter, and gRPC plus HTTP presentation adapters exist; `AppEnv` models
-logger, PostgreSQL, and cache settings, but this scaffold does not yet construct a
-pool or cache in composition, load environment settings, or select an HTTP
-framework, broker, or runtime lifecycle. `master_database` seeds the
+cached repository decorators, national-boundary adapter, gRPC plus HTTP
+presentation adapters, and composition exist. `AppEnv` models logger, PostgreSQL,
+cache, transport, and shutdown settings; composition constructs the pool, Moka
+cache, and both servers. No message broker is selected. `master_database` seeds the
 `indonesia_boundary` singleton from a simplified Marine Regions EEZ/land union with
 CC BY 4.0 attribution.
 
@@ -156,6 +161,7 @@ cargo test
 ```
 
 Layer guides and the [tests guide](tests/AGENTS.md) describe behavior tests.
-Documentation-only changes require content, link, and whitespace checks; they do
-not require introducing tests or runtime dependencies. Migration/seeder and NGINX
-work remain deferred.
+Runtime configuration and listener behavior are covered by config and composition
+tests. Documentation-only changes require content, link, and whitespace checks;
+they do not require introducing tests or runtime dependencies. Migration/seeder
+and NGINX work remain deferred.
