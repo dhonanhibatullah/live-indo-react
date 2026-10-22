@@ -8,6 +8,8 @@
 #[path = "0008_0045_cities.rs"]
 pub mod cities;
 pub mod connection;
+#[path = "0047_indonesia_boundary.rs"]
+pub mod indonesia_boundary;
 pub mod migrations;
 #[path = "0046_polling_methods.rs"]
 pub mod polling_methods;
@@ -46,12 +48,13 @@ impl SeedSummary {
     }
 }
 
-/// Apply geographic seeds then polling methods, stopping at the first failure.
+/// Apply geographic, polling-method, then national-boundary seeds, stopping at the first failure.
 pub async fn seed(pool: &PgPool) -> Result<SeedSummary, DatabaseError> {
     info(format_args!("seed run started"));
     let mut summary = provinces::seed(pool).await?;
     summary.add(cities::seed(pool).await?);
     summary.add(polling_methods::seed(pool).await?);
+    summary.add(indonesia_boundary::seed(pool).await?);
     info(format_args!(
         "seed run complete files_applied={} files_skipped={} rows_inserted={} rows_skipped={}",
         summary.files_applied, summary.files_skipped, summary.rows_inserted, summary.rows_skipped
@@ -64,12 +67,14 @@ enum Group {
     Provinces,
     Cities,
     PollingMethods,
+    IndonesiaBoundary,
 }
 
 enum PreparedRows {
     Provinces(Vec<provinces::PreparedProvince>),
     Cities(Vec<cities::PreparedCity>),
     PollingMethods(Vec<crate::models::PollingMethod>),
+    IndonesiaBoundary(Vec<indonesia_boundary::PreparedIndonesiaBoundary>),
 }
 
 struct RowOutcome {
@@ -197,6 +202,9 @@ async fn apply_pending(
         Group::Provinces => provinces::prepare(file).map(PreparedRows::Provinces),
         Group::Cities => cities::prepare(file).map(PreparedRows::Cities),
         Group::PollingMethods => polling_methods::prepare(file).map(PreparedRows::PollingMethods),
+        Group::IndonesiaBoundary => {
+            indonesia_boundary::prepare(file).map(PreparedRows::IndonesiaBoundary)
+        }
     })
     .await
     .map_err(|error| DatabaseError::new("prepare seed task", error).file(file))??;
@@ -224,6 +232,15 @@ async fn apply_pending(
             for row in rows {
                 outcomes.push(
                     polling_methods::execute(tx, row)
+                        .await
+                        .map_err(|error| error.file(file))?,
+                );
+            }
+        }
+        PreparedRows::IndonesiaBoundary(rows) => {
+            for row in rows {
+                outcomes.push(
+                    indonesia_boundary::execute(tx, row)
                         .await
                         .map_err(|error| error.file(file))?,
                 );

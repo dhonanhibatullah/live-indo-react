@@ -24,6 +24,7 @@ struct FakeCityRepository {
     listed: Vec<City>,
     find_by_id_calls: AtomicUsize,
     find_by_code_calls: AtomicUsize,
+    find_by_coord_calls: AtomicUsize,
     list_calls: AtomicUsize,
 }
 
@@ -35,6 +36,7 @@ impl FakeCityRepository {
             listed: vec![city],
             find_by_id_calls: AtomicUsize::new(0),
             find_by_code_calls: AtomicUsize::new(0),
+            find_by_coord_calls: AtomicUsize::new(0),
             list_calls: AtomicUsize::new(0),
         }
     }
@@ -45,6 +47,10 @@ impl FakeCityRepository {
 
     fn find_by_code_calls(&self) -> usize {
         self.find_by_code_calls.load(Ordering::SeqCst)
+    }
+
+    fn find_by_coord_calls(&self) -> usize {
+        self.find_by_coord_calls.load(Ordering::SeqCst)
     }
 
     fn list_calls(&self) -> usize {
@@ -86,6 +92,17 @@ impl CityRepository for FakeCityRepository {
             (city.kemendagri_code == code).then(|| city.clone())
         };
         Box::pin(async move { Ok(found) })
+    }
+
+    fn find_city_by_coord<'a>(
+        &'a self,
+        _context: &'a AppContext,
+        _longitude: f64,
+        _latitude: f64,
+    ) -> RepositoryFuture<'a, Option<City>> {
+        self.find_by_coord_calls.fetch_add(1, Ordering::SeqCst);
+        let city = self.city.lock().expect("city lock").clone();
+        Box::pin(async move { Ok(Some(city)) })
     }
 
     fn list<'a>(
@@ -160,6 +177,21 @@ async fn reads_use_cache_and_transactions_bypass_it() {
         .await
         .unwrap();
     assert_eq!(repository.find_by_code_calls(), 1);
+
+    cached
+        .find_city_by_coord(&context, 106.5, -6.5)
+        .await
+        .unwrap();
+    cached
+        .find_city_by_coord(&context, 106.5, -6.5)
+        .await
+        .unwrap();
+    assert_eq!(repository.find_by_coord_calls(), 1);
+    cached
+        .find_city_by_coord(&context, 107.5, -7.5)
+        .await
+        .unwrap();
+    assert_eq!(repository.find_by_coord_calls(), 2);
 
     let transaction_context = AppContext {
         transaction: Some(AppTransaction::new(())),

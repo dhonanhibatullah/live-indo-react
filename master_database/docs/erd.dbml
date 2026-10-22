@@ -63,6 +63,7 @@ DBML's portable index syntax does not express GiST or GIN operator classes.
 The SQL migrations define these additional indexes:
 CREATE INDEX idx_provinces_boundary_gist ON provinces USING GIST (boundary);
 CREATE INDEX idx_cities_boundary_gist ON cities USING GIST (boundary);
+CREATE INDEX idx_indonesia_boundary_gist ON indonesia_boundary USING GIST (boundary);
 CREATE INDEX idx_topics_name_trgm ON topics USING GIN (name gin_trgm_ops);
 CREATE INDEX idx_provinces_name_trgm ON provinces USING GIN (name gin_trgm_ops);
 CREATE INDEX idx_cities_name_trgm ON cities USING GIN (name gin_trgm_ops);
@@ -186,6 +187,17 @@ Table cities [headercolor: #2563EB] {
         kemendagri_code [unique, name: 'uq_cities_kemendagri_code']
         (province_id, kind, name, id) [name: 'idx_cities_province_kind_name', note: 'Parent lookup and ordered city/regency listing; province_id is the leading FK column.']
     }
+}
+
+Table indonesia_boundary [headercolor: #DC2626] {
+    Note: 'Singleton national boundary for country containment, including Indonesian waters outside province boundaries. Boundary data must cover the intended legal geography; province boundaries are not a substitute. id is constrained to 1 so the table holds one national boundary.'
+
+    id                      smallint    [pk, default: 1]
+    boundary                geometry(MultiPolygon,4326) [not null]
+    boundary_source         text        [not null, note: 'Dataset/publisher reference including version or release identifier and attribution.']
+    boundary_reference_date date        [note: 'Effective/reference date of the source boundary, when supplied.']
+    created_at              timestamptz [not null, default: `NOW()`]
+    updated_at              timestamptz
 }
 
 Ref fk_cities_province: cities.province_id > provinces.id [delete: restrict, update: restrict]

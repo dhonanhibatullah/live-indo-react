@@ -128,6 +128,48 @@ impl CityRepository for CachedCity {
         })
     }
 
+    fn find_city_by_coord<'a>(
+        &'a self,
+        context: &'a AppContext,
+        longitude: f64,
+        latitude: f64,
+    ) -> RepositoryFuture<'a, Option<City>> {
+        if context.transaction.is_some() {
+            return self
+                .repository
+                .find_city_by_coord(context, longitude, latitude);
+        }
+
+        let generation = self.namespace.generation();
+        let key = self.namespace.hash_key(
+            generation,
+            "coord",
+            &(longitude.to_bits(), latitude.to_bits()),
+        );
+
+        Box::pin(async move {
+            if let Some(city) = self.cached::<City>(context, &key) {
+                return Ok(Some(city));
+            }
+
+            let city = self
+                .repository
+                .find_city_by_coord(context, longitude, latitude)
+                .await?;
+            if let Some(value) = &city {
+                self.store(
+                    context,
+                    &key,
+                    CacheKind::Individual,
+                    value.clone(),
+                    generation,
+                );
+            }
+
+            Ok(city)
+        })
+    }
+
     fn list<'a>(
         &'a self,
         context: &'a AppContext,

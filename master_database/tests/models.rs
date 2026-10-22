@@ -1,7 +1,8 @@
 use std::{collections::BTreeSet, fs, path::Path};
 
 use master_database::models::{
-    Boundary, CatalogSeedFile, City, CityKind, Env, PollingMethod, Province, SeedFile,
+    Boundary, CatalogSeedFile, City, CityKind, Env, IndonesiaBoundary, PollingMethod, Province,
+    SeedFile,
 };
 use serde_json::json;
 
@@ -21,6 +22,7 @@ fn models_deserialize_all_seed_files_without_losing_province_links_or_provenance
     let mut provinces = BTreeSet::new();
     let mut province_files = 0;
     let mut city_files = 0;
+    let mut boundary_files = 0;
     let mut cities = 0;
     let mut city_count = 0;
     let mut regency_count = 0;
@@ -51,6 +53,20 @@ fn models_deserialize_all_seed_files_without_losing_province_links_or_provenance
                 assert!(!coordinates.is_empty());
             }
             province_files += 1;
+        } else if expected_name == "indonesia_boundary" {
+            let seed: SeedFile<IndonesiaBoundary> = serde_json::from_slice(&bytes).unwrap();
+            assert_eq!(seed.version, 47);
+            assert_eq!(seed.name, expected_name);
+            assert_eq!(seed.srid, 4326);
+            assert_eq!(seed.source.copyright.license, "CC BY 4.0");
+            assert_eq!(seed.source.revision.len(), 40);
+            assert_eq!(seed.source.sha256.len(), 64);
+            assert_eq!(seed.records.len(), 1);
+            let record = &seed.records[0];
+            assert!(!record.boundary_source.is_empty());
+            let Boundary::MultiPolygon { coordinates } = &record.boundary;
+            assert!(!coordinates.is_empty());
+            boundary_files += 1;
         } else if expected_name == "polling_methods" {
             let seed: CatalogSeedFile<PollingMethod> = serde_json::from_slice(&bytes).unwrap();
             assert_eq!(seed.version, 46);
@@ -82,7 +98,7 @@ fn models_deserialize_all_seed_files_without_losing_province_links_or_provenance
         }
     }
 
-    assert_eq!((province_files, city_files), (7, 38));
+    assert_eq!((province_files, city_files, boundary_files), (7, 38, 1));
     assert_eq!((provinces.len(), cities), (38, 514));
     assert_eq!((city_count, regency_count), (98, 416));
 }

@@ -7,6 +7,13 @@ use crate::domain::models::{
     entity::{Boundary, BoundaryError},
 };
 
+pub(crate) fn valid_coordinate(longitude: f64, latitude: f64) -> bool {
+    longitude.is_finite()
+        && latitude.is_finite()
+        && (-180.0..=180.0).contains(&longitude)
+        && (-90.0..=90.0).contains(&latitude)
+}
+
 pub(crate) fn encode_boundary(boundary: &Boundary) -> Result<String, RepositoryError> {
     serde_json::to_string(&json!({
         "type": "MultiPolygon",

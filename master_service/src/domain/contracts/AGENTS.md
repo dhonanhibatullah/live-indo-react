@@ -14,13 +14,17 @@ framework contexts.
 
 Introduce master-data persistence and external lookup capabilities only when a
 feature needs them. Every repository method takes `&AppContext` first, then the
-explicit entity/filter scope. Repository contracts return `RepositoryError`, using
-specific not-found/conflict codes where the repository owns that classification
-and generic buckets otherwise. The validator contract returns `ValidatorError`.
-Adapters must route execution through the context's opaque transaction handle
-without exposing native transaction types to callers. Do not add a transaction
-abstraction, publication contract, or distributed consistency guarantee just for
-symmetry.
+explicit entity/filter scope. The singleton `IndonesiaBoundaryRepository` exposes
+get/update and national-boundary `is_inside`; invalid coordinates return
+`BAD_ARGS`, and a missing boundary returns `false` for containment. Coordinate
+lookups take WGS84 longitude then latitude, return only active nondeleted regions,
+include boundary points, and order overlaps by ID. Repository contracts return
+`RepositoryError`, using specific
+not-found/conflict codes where the repository owns that classification and generic
+buckets otherwise. The validator contract returns `ValidatorError`. Adapters must
+route execution through the context's opaque transaction handle without exposing
+native transaction types to callers. Do not add a transaction abstraction,
+publication contract, or distributed consistency guarantee just for symmetry.
 
 ## Compatibility and tests
 

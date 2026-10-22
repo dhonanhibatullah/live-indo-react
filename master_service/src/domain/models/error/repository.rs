@@ -28,6 +28,8 @@ pub enum RepositoryError {
     ProvinceNotFound,
     ProvinceKemendagriCodeConflict,
 
+    IndonesiaBoundaryNotFound,
+
     CityNotFound,
     CityKemendagriCodeConflict,
     CityProvinceNotFound,
@@ -50,6 +52,7 @@ impl RepositoryError {
             Self::PollingMethodCodeConflict => "POLLING_METHOD_CODE_CONFLICT",
             Self::ProvinceNotFound => "PROVINCE_NOT_FOUND",
             Self::ProvinceKemendagriCodeConflict => "PROVINCE_KEMENDAGRI_CODE_CONFLICT",
+            Self::IndonesiaBoundaryNotFound => "INDONESIA_BOUNDARY_NOT_FOUND",
             Self::CityNotFound => "CITY_NOT_FOUND",
             Self::CityKemendagriCodeConflict => "CITY_KEMENDAGRI_CODE_CONFLICT",
             Self::CityProvinceNotFound => "CITY_PROVINCE_NOT_FOUND",
@@ -76,6 +79,7 @@ impl fmt::Display for RepositoryError {
             Self::ProvinceKemendagriCodeConflict => {
                 "province Kemendagri code conflicts with existing data"
             }
+            Self::IndonesiaBoundaryNotFound => "Indonesia boundary was not found",
             Self::CityNotFound => "city was not found",
             Self::CityKemendagriCodeConflict => "city Kemendagri code conflicts with existing data",
             Self::CityProvinceNotFound => "city province was not found",

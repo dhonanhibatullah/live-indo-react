@@ -34,6 +34,17 @@ pub trait ProvinceRepository: Send + Sync {
         code: &'a str,
     ) -> RepositoryFuture<'a, Option<Province>>;
 
+    /// Return the active, nondeleted province containing a WGS84 point.
+    ///
+    /// Boundary points are included. Overlapping matches resolve by the lowest
+    /// province ID. Invalid longitude or latitude values return `BAD_ARGS`.
+    fn find_province_by_coord<'a>(
+        &'a self,
+        context: &'a AppContext,
+        longitude: f64,
+        latitude: f64,
+    ) -> RepositoryFuture<'a, Option<Province>>;
+
     /// List provinces that match the filter; deleted rows are excluded unless requested.
     fn list<'a>(
         &'a self,

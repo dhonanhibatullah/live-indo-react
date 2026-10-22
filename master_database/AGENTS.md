@@ -2,9 +2,10 @@
 
 This standalone Rust 2024 crate owns the PostgreSQL/PostGIS reference schema and
 geographic seed importer for live-indo-react. The schema contains reaction topics,
-Indonesian provinces, cities/regencies, polling methods, and seed history. The current embedded
+Indonesian provinces, cities/regencies, a singleton national boundary, polling
+methods, and seed history. The current embedded
 catalog contains 38 provinces and 514 cities/regencies across 45 JSON files, plus
-three polling methods in version 46;
+three polling methods in version 46 and a national boundary in version 47;
 there is no initial topic catalog. Counts describe this dataset, not permanent
 administrative rules.
 
@@ -68,6 +69,10 @@ database counterparts. `#[path]` exposes them as `seeds::provinces`,
   reference dates. The schema does not enforce topological validity; the importer
   checks administrative codes/parents but not polygon validity or containment.
   Seed data is expected to be valid, and tests assert imported geometries are valid.
+- `indonesia_boundary` is a singleton national boundary for country containment,
+  including waters outside province boundaries. Seed version 47 contains one
+  simplified Marine Regions EEZ/land union record with CC BY 4.0 attribution.
+  Province boundaries are not a substitute for the national boundary.
 - Applied seeds are immutable, including whitespace: checksums hash source bytes.
   Corrections need a new version and explicit update behavior; the current runner
   preserves existing rows. Adding versions also requires updating `build.rs`'s
@@ -119,7 +124,7 @@ whitespace; Rust tests are not evidence of documentation accuracy.
 
 ## Polling metadata
 
-The fresh workflow has six schema migrations, 46 seed files, and 555 reference
+The fresh workflow has seven schema migrations, 47 seed files, and 556 reference
 rows. Keep geographic seed versions/bytes unchanged. Version 46 uses the
 `CatalogSeedFile<T>` envelope (`version`, `name`, `records`) and the catalog loader,
 sharing compression, checksums, advisory locking, and transaction/history behavior

@@ -1,11 +1,13 @@
 pub mod city;
 pub mod future;
+pub mod indonesia_boundary;
 pub mod polling_method;
 pub mod province;
 pub mod topic;
 
 pub use city::CityRepository;
 pub use future::RepositoryFuture;
+pub use indonesia_boundary::IndonesiaBoundaryRepository;
 pub use polling_method::PollingMethodRepository;
 pub use province::ProvinceRepository;
 pub use topic::TopicRepository;

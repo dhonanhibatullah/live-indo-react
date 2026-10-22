@@ -35,6 +35,17 @@ pub trait CityRepository: Send + Sync {
         code: &'a str,
     ) -> RepositoryFuture<'a, Option<City>>;
 
+    /// Return the active, nondeleted city/regency containing a WGS84 point.
+    ///
+    /// Boundary points are included. Overlapping matches resolve by the lowest
+    /// city ID. Invalid longitude or latitude values return `BAD_ARGS`.
+    fn find_city_by_coord<'a>(
+        &'a self,
+        context: &'a AppContext,
+        longitude: f64,
+        latitude: f64,
+    ) -> RepositoryFuture<'a, Option<City>>;
+
     /// List cities/regencies that match the filter; deleted rows are excluded unless requested.
     fn list<'a>(
         &'a self,

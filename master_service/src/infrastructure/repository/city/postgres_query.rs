@@ -56,6 +56,17 @@ pub(super) fn find_by_kemendagri_code(code: &str) -> QueryBuilder<Postgres> {
     query
 }
 
+pub(super) fn find_by_coord(longitude: f64, latitude: f64) -> QueryBuilder<Postgres> {
+    let mut query = select();
+    query
+        .push(" WHERE deleted_at IS NULL AND is_active AND ST_Covers(boundary, ST_SetSRID(ST_MakePoint(")
+        .push_bind(longitude)
+        .push(", ")
+        .push_bind(latitude)
+        .push("), 4326)) ORDER BY id ASC LIMIT 1");
+    query
+}
+
 pub(super) fn list(filter: &ListArgs) -> QueryBuilder<Postgres> {
     let mut query = select();
     query.push(" WHERE TRUE");

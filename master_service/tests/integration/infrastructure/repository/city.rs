@@ -54,6 +54,26 @@ async fn cities_support_crud_filters_and_parent_errors() {
             .id,
         created.id
     );
+    assert_eq!(
+        repository
+            .find_city_by_coord(&context, 106.5, -6.5)
+            .await
+            .expect("find city by coordinate")
+            .expect("coordinate is inside city")
+            .id,
+        created.id
+    );
+    assert_eq!(
+        repository
+            .find_city_by_coord(&context, 0.0, 0.0)
+            .await
+            .expect("find outside city"),
+        None
+    );
+    assert!(matches!(
+        repository.find_city_by_coord(&context, 181.0, 0.0).await,
+        Err(RepositoryError::BadArgs)
+    ));
     assert!(matches!(
         repository
             .create(

@@ -1,10 +1,10 @@
 # Master database
 
 PostgreSQL/PostGIS reference data for live-indo-react: nationwide reaction topics,
-Indonesian provinces, and cities/regencies with geographic boundaries. The Rust
-executable imports 38 provinces and 514 cities/regencies from 45 embedded seed
-files, plus three polling methods from a separate catalog seed. Topics have a
-schema but no initial seed data.
+Indonesian provinces, cities/regencies, and a singleton national boundary with geographic coverage.
+The Rust executable imports 38 provinces and 514 cities/regencies from 45
+embedded seed files, plus a national boundary and three polling methods from
+separate seeds. Topics have a schema but no initial seed data.
 
 See the [ERD](docs/erd.dbml) for the schema and [AGENTS.md](AGENTS.md) for contributor
 guidance.
@@ -47,7 +47,7 @@ cargo run --release --locked
 ```
 
 The executable connects, applies pending SQL migrations, verifies the schema,
-seeds provinces, cities, and polling methods, and closes the pool. The configured role
+seeds provinces, cities, polling methods, and the national boundary, and closes the pool. The configured role
 needs permission to create the PostGIS/pg_trgm extensions and schema objects,
 read and insert reference and history rows, and use identity sequences. The target database must already
 exist; both extensions must be available on its server. Name searches on topics,
@@ -91,9 +91,12 @@ The runtime runs as UID/GID `10001:10001`. Credentials are supplied at runtime;
 
 ## Seed behavior
 
-After migrations, the executable imports provinces before cities and exits. A fresh successful
-run inserts 552 geographic rows, three polling methods, and 46 seed-history rows. INFO messages go to
-stdout; errors go to stderr with a nonzero exit status.
+After migrations, the executable imports provinces, cities, polling methods,
+then the national boundary and exits. A fresh successful run inserts 552
+geographic rows, one national boundary, three polling methods, and 47 seed-history
+rows. INFO messages go to stdout; errors go to stderr with a nonzero exit status.
+The boundary seed is a simplified Marine Regions EEZ/land union with CC BY 4.0
+attribution in `seeds/LICENSE.marineregions`.
 
 Run the same command again safely: matching completed files are skipped, and
 existing regions are preserved by Kemendagri code, including inactive or
@@ -134,8 +137,8 @@ redistributing the data.
 The catalog seed `0046_polling_methods.json` adds `agree_disagree`, `rating`, and
 `selection`. Topics require a `polling_method_id` foreign key and store choices in
 `selection_options TEXT[] NOT NULL DEFAULT '{}'`. Resolve methods by code instead
-of assuming generated IDs. The complete fresh workflow applies six schema
-migrations and 46 seed files, inserting 555 reference rows.
+of assuming generated IDs. The complete fresh workflow applies seven schema
+migrations and 47 seed files, inserting 556 reference rows.
 
 Migrations enforce required columns and the foreign key; there are no CHECK
 constraints or business validation triggers. The `master_service` validator

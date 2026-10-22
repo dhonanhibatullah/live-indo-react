@@ -122,6 +122,10 @@ fn repository_specific_codes_are_stable() {
         ),
         (RepositoryError::ProvinceNotFound, "PROVINCE_NOT_FOUND"),
         (
+            RepositoryError::IndonesiaBoundaryNotFound,
+            "INDONESIA_BOUNDARY_NOT_FOUND",
+        ),
+        (
             RepositoryError::ProvinceKemendagriCodeConflict,
             "PROVINCE_KEMENDAGRI_CODE_CONFLICT",
         ),
@@ -172,6 +176,11 @@ fn repository_operational_errors_preserve_native_sources() {
 #[test]
 fn repository_classification_errors_have_no_source() {
     assert!(RepositoryError::TopicNotFound.source().is_none());
+    assert!(
+        RepositoryError::IndonesiaBoundaryNotFound
+            .source()
+            .is_none()
+    );
     assert!(
         RepositoryError::CityKemendagriCodeConflict
             .source()

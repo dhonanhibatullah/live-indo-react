@@ -140,12 +140,22 @@ impl Fixture {
     }
 
     async fn count(&self, table: &str) -> i64 {
-        assert!(["provinces", "cities", "seed_history", "polling_methods"].contains(&table));
+        assert!(
+            [
+                "provinces",
+                "cities",
+                "seed_history",
+                "polling_methods",
+                "indonesia_boundary",
+            ]
+            .contains(&table)
+        );
         sqlx::query_scalar(match table {
             "provinces" => "SELECT count(*) FROM provinces",
             "cities" => "SELECT count(*) FROM cities",
             "seed_history" => "SELECT count(*) FROM seed_history",
             "polling_methods" => "SELECT count(*) FROM polling_methods",
+            "indonesia_boundary" => "SELECT count(*) FROM indonesia_boundary",
             _ => unreachable!(),
         })
         .fetch_one(&self.pool)
@@ -200,12 +210,13 @@ async fn executable_migrates_then_seeds_and_rolls_back_failed_sql() {
         );
         assert_eq!(fixture.count("provinces").await, 38);
         assert_eq!(fixture.count("cities").await, 514);
-        assert_eq!(fixture.count("seed_history").await, 46);
+        assert_eq!(fixture.count("indonesia_boundary").await, 1);
+        assert_eq!(fixture.count("seed_history").await, 47);
         let count: i64 = sqlx::query_scalar("SELECT count(*) FROM _sqlx_migrations WHERE success")
             .fetch_one(&fixture.pool)
             .await
             .unwrap();
-        assert_eq!(count, 6);
+        assert_eq!(count, 7);
     }
     let connected = database::connection::connect(&fixture.env).await.unwrap();
     connected.close().await;
@@ -271,16 +282,17 @@ async fn executable_seeds_reruns_and_reports_schema_failure() {
         env!("CARGO_PKG_VERSION"),
         " starting"
     )));
-    assert!(stdout.contains("files_applied=46 files_skipped=0 rows_inserted=555"));
+    assert!(stdout.contains("files_applied=47 files_skipped=0 rows_inserted=556"));
     assert!(stdout.contains("database connection pool closed"));
     assert!(stdout.contains("master_database completed"));
     assert_eq!(fixture.count("provinces").await, 38);
     assert_eq!(fixture.count("cities").await, 514);
-    assert_eq!(fixture.count("seed_history").await, 46);
+    assert_eq!(fixture.count("indonesia_boundary").await, 1);
+    assert_eq!(fixture.count("seed_history").await, 47);
 
     let second = run();
     assert!(second.status.success());
-    assert!(String::from_utf8_lossy(&second.stdout).contains("files_applied=0 files_skipped=46"));
+    assert!(String::from_utf8_lossy(&second.stdout).contains("files_applied=0 files_skipped=47"));
 
     sqlx::query("DROP TABLE cities")
         .execute(&fixture.pool)
@@ -304,23 +316,24 @@ async fn fresh_run_and_rerun_preserve_seed_history_and_geometry() {
     assert_eq!(
         database::seed(&connected).await.unwrap(),
         SeedSummary {
-            files_applied: 46,
+            files_applied: 47,
             files_skipped: 0,
-            rows_inserted: 555,
+            rows_inserted: 556,
             rows_skipped: 0
         }
     );
     assert_eq!(fixture.count("provinces").await, 38);
     assert_eq!(fixture.count("cities").await, 514);
-    assert_eq!(fixture.count("seed_history").await, 46);
-    let invalid: i64 = sqlx::query_scalar("SELECT count(*) FROM (SELECT boundary FROM provinces UNION ALL SELECT boundary FROM cities) b WHERE NOT ST_IsValid(boundary) OR ST_IsEmpty(boundary) OR ST_SRID(boundary) <> 4326 OR GeometryType(boundary) <> 'MULTIPOLYGON'").fetch_one(&connected).await.unwrap();
+    assert_eq!(fixture.count("indonesia_boundary").await, 1);
+    assert_eq!(fixture.count("seed_history").await, 47);
+    let invalid: i64 = sqlx::query_scalar("SELECT count(*) FROM (SELECT boundary FROM provinces UNION ALL SELECT boundary FROM cities UNION ALL SELECT boundary FROM indonesia_boundary) b WHERE NOT ST_IsValid(boundary) OR ST_IsEmpty(boundary) OR ST_SRID(boundary) <> 4326 OR GeometryType(boundary) <> 'MULTIPOLYGON'").fetch_one(&connected).await.unwrap();
     assert_eq!(invalid, 0);
     let mismatches: i64 = sqlx::query_scalar("SELECT count(*) FROM cities c JOIN provinces p ON p.id=c.province_id WHERE left(c.kemendagri_code,2) <> p.kemendagri_code").fetch_one(&connected).await.unwrap();
     assert_eq!(mismatches, 0);
     assert_eq!(
         database::seed(&connected).await.unwrap(),
         SeedSummary {
-            files_skipped: 46,
+            files_skipped: 47,
             ..Default::default()
         }
     );
@@ -336,7 +349,7 @@ async fn existing_retired_rows_are_preserved_while_missing_rows_are_created() {
     let parent: i64 = sqlx::query_scalar("INSERT INTO provinces(kemendagri_code,name,boundary,boundary_source,is_active,deleted_at) VALUES ('11','Preserved province',ST_GeomFromText('MULTIPOLYGON(((100 0,101 0,101 1,100 0)))',4326),'fixture',false,NOW()) RETURNING id").fetch_one(&fixture.pool).await.unwrap();
     sqlx::query("INSERT INTO cities(province_id,kemendagri_code,kind,name,boundary,boundary_source,is_active,deleted_at) VALUES ($1,'11.01','city','Preserved city',ST_GeomFromText('MULTIPOLYGON(((100 0,101 0,101 1,100 0)))',4326),'fixture',false,NOW())").bind(parent).execute(&fixture.pool).await.unwrap();
     let result = database::seed(&fixture.pool).await.unwrap();
-    assert_eq!((result.rows_inserted, result.rows_skipped), (553, 2));
+    assert_eq!((result.rows_inserted, result.rows_skipped), (554, 2));
     let preserved: (String, bool, bool, String) = sqlx::query_as(
         "SELECT name,is_active,deleted_at IS NOT NULL,boundary_source FROM provinces WHERE id=$1",
     )
@@ -350,7 +363,8 @@ async fn existing_retired_rows_are_preserved_while_missing_rows_are_created() {
     );
     let city: (String, String, bool, bool) = sqlx::query_as("SELECT name,kind::text,is_active,deleted_at IS NOT NULL FROM cities WHERE kemendagri_code='11.01'").fetch_one(&fixture.pool).await.unwrap();
     assert_eq!(city, ("Preserved city".into(), "city".into(), false, true));
-    assert_eq!(fixture.count("seed_history").await, 46);
+    assert_eq!(fixture.count("indonesia_boundary").await, 1);
+    assert_eq!(fixture.count("seed_history").await, 47);
     fixture.close().await;
 }
 
@@ -418,9 +432,9 @@ async fn failed_file_rolls_back_and_retry_resumes_after_prior_commits() {
     assert_eq!(
         retry,
         SeedSummary {
-            files_applied: 45,
+            files_applied: 46,
             files_skipped: 1,
-            rows_inserted: 545,
+            rows_inserted: 546,
             rows_skipped: 0
         }
     );
@@ -449,10 +463,10 @@ async fn independent_runners_do_not_duplicate_records_or_history() {
     let (first, other) = tokio::join!(database::seed(&fixture.pool), database::seed(&second));
     let first = first.unwrap();
     let other = other.unwrap();
-    assert_eq!(first.files_applied + other.files_applied, 46);
-    assert_eq!(first.files_skipped + other.files_skipped, 46);
-    assert_eq!(first.rows_inserted + other.rows_inserted, 555);
-    assert_eq!(fixture.count("seed_history").await, 46);
+    assert_eq!(first.files_applied + other.files_applied, 47);
+    assert_eq!(first.files_skipped + other.files_skipped, 47);
+    assert_eq!(first.rows_inserted + other.rows_inserted, 556);
+    assert_eq!(fixture.count("seed_history").await, 47);
     assert_eq!(fixture.count("provinces").await, 38);
     assert_eq!(fixture.count("cities").await, 514);
     second.close().await;
@@ -550,6 +564,39 @@ async fn polling_method_seed_rolls_back_rows_and_history_on_failure() {
         .await
         .unwrap();
     assert_eq!(retry.rows_inserted, 3);
+    assert_eq!(fixture.count("seed_history").await, 1);
+    fixture.close().await;
+}
+
+#[tokio::test]
+async fn indonesia_boundary_seed_is_singleton_and_rerunnable() {
+    let Some(fixture) = Fixture::new(true).await else {
+        return;
+    };
+    let first = database::indonesia_boundary::seed(&fixture.pool)
+        .await
+        .unwrap();
+    assert_eq!(first.files_applied, 1);
+    assert_eq!(first.rows_inserted, 1);
+    assert_eq!(fixture.count("indonesia_boundary").await, 1);
+
+    let boundary: (i64, bool, bool, i32, String) = sqlx::query_as(
+        "SELECT id::bigint, ST_IsValid(boundary), ST_IsEmpty(boundary), ST_SRID(boundary), GeometryType(boundary) FROM indonesia_boundary",
+    )
+    .fetch_one(&fixture.pool)
+    .await
+    .unwrap();
+    assert_eq!(boundary.0, 1);
+    assert!(boundary.1);
+    assert!(!boundary.2);
+    assert_eq!(boundary.3, 4326);
+    assert_eq!(boundary.4, "MULTIPOLYGON");
+
+    let second = database::indonesia_boundary::seed(&fixture.pool)
+        .await
+        .unwrap();
+    assert_eq!(second.files_skipped, 1);
+    assert_eq!(fixture.count("indonesia_boundary").await, 1);
     assert_eq!(fixture.count("seed_history").await, 1);
     fixture.close().await;
 }
@@ -659,7 +706,7 @@ async fn topics_reference_methods_and_store_native_arrays_without_business_trigg
             .unwrap();
     }
     let removed: bool = sqlx::query_scalar(
-        "SELECT to_regclass('topics') IS NULL AND to_regclass('polling_methods') IS NULL",
+        "SELECT to_regclass('topics') IS NULL AND to_regclass('polling_methods') IS NULL AND to_regclass('indonesia_boundary') IS NULL",
     )
     .fetch_one(&fixture.pool)
     .await

@@ -10,8 +10,8 @@
       {
         "name": "topics",
         "schemaName": "public",
-        "x": -297.8120383718379,
-        "y": 386
+        "x": 84.66189847925659,
+        "y": 853.4681450402265
       },
       {
         "name": "provinces",
@@ -30,6 +30,18 @@
         "schemaName": "public",
         "x": 19.364870484790856,
         "y": 151.9325392110267
+      },
+      {
+        "name": "polling_methods",
+        "schemaName": "public",
+        "x": 509.2161179064225,
+        "y": 906.3351813002828
+      },
+      {
+        "name": "indonesia_boundary",
+        "schemaName": "public",
+        "x": -435.71233433748097,
+        "y": 396.5987920558226
       }
     ],
     "tableGroupCollapseStates": [],

@@ -37,6 +37,12 @@ set it with `NOW()`. Lists use deterministic `name ASC, id ASC` ordering and bin
 the contract pagination directly. Name filters use escaped, literal `ILIKE`
 contains matching.
 
+Coordinate lookups use the existing GiST boundary indexes and
+`ST_Covers(boundary, ST_SetSRID(ST_MakePoint(longitude, latitude), 4326))`. Filter
+`deleted_at IS NULL AND is_active`, order overlaps by `id ASC` with `LIMIT 1`, and
+validate finite longitude/latitude ranges as `BadArgs` before querying. Boundary
+points are included; no extra spatial index is required for these queries.
+
 Preserve parent relationships through the existing foreign keys and map their
 constraint names to entity-specific relation errors. A soft-deleted parent remains
 physically referenceable.
@@ -63,8 +69,29 @@ entity; separate decorator instances have independent generations.
 
 Test cache hits, misses, filter-key separation, write invalidation, transaction
 bypass, and cancellation using in-memory fakes in
-`tests/unit/infrastructure/repository/`. Keep PostgreSQL integration behavior
-unchanged.
+`tests/unit/infrastructure/repository/`. Exercise coordinate containment and
+active/nondeleted filtering through PostgreSQL integration tests in
+`tests/integration/infrastructure/repository/`.
+
+## Indonesia boundary
+
+`indonesia_boundary/` implements the singleton `IndonesiaBoundaryRepository`
+through `PostgresIndonesiaBoundary` and `CachedIndonesiaBoundary`. The row is
+created by `master_database`; this layer does not create it. `get` returns
+`Option`, `update` handles partial boundary/source/reference-date changes, and
+`is_inside` validates WGS84 coordinates and queries with `ST_Covers`. A missing
+row makes `is_inside` false and makes `update` return
+`INDONESIA_BOUNDARY_NOT_FOUND`; invalid coordinates return `BAD_ARGS`.
+
+The cached decorator stores `get` under the singleton ID key and caches both true
+and false `is_inside` results by coordinate bits. `update` uses the standard
+write-scoped invalidation guard. Transaction reads bypass the cache. Use tag
+`repository/indonesia_boundary/<operation>` and preserve the same error/logging
+rules as other repositories.
+
+Test get/update/containment in
+`tests/integration/infrastructure/repository/indonesia_boundary.rs` and cache
+behavior in `tests/unit/infrastructure/repository/indonesia_boundary.rs`.
 
 ## Transactions and resources
 

@@ -17,6 +17,8 @@
 
 #[path = "0008_0045_cities.rs"]
 pub mod cities;
+#[path = "0047_indonesia_boundary.rs"]
+pub mod indonesia_boundary;
 #[path = "0046_polling_methods.rs"]
 pub mod polling_methods;
 #[path = "0001_0007_provinces.rs"]

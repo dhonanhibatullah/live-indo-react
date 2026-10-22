@@ -17,7 +17,7 @@ use crate::domain::{
 use super::{
     super::shared::{
         error::{OperationError, finish, require_affected},
-        scan,
+        geo, scan,
     },
     postgres_query as query,
 };
@@ -98,6 +98,34 @@ impl ProvinceRepository for PostgresProvince {
                 self.logger.as_ref(),
                 context,
                 "repository/province/find_by_kemendagri_code",
+                result,
+                || RepositoryError::ProvinceNotFound,
+            )
+        })
+    }
+
+    fn find_province_by_coord<'a>(
+        &'a self,
+        context: &'a AppContext,
+        longitude: f64,
+        latitude: f64,
+    ) -> RepositoryFuture<'a, Option<Province>> {
+        Box::pin(async move {
+            let result: Result<Option<Province>, OperationError> = async {
+                if !geo::valid_coordinate(longitude, latitude) {
+                    return Err(RepositoryError::BadArgs.into());
+                }
+                let mut query = query::find_by_coord(longitude, latitude);
+                match self.database.query_optional(context, query.build()).await? {
+                    Some(row) => Ok(Some(scan::province::decode(&row)?)),
+                    None => Ok(None),
+                }
+            }
+            .await;
+            finish(
+                self.logger.as_ref(),
+                context,
+                "repository/province/find_province_by_coord",
                 result,
                 || RepositoryError::ProvinceNotFound,
             )

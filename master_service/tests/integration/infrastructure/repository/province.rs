@@ -52,6 +52,28 @@ async fn provinces_support_crud_boundaries_and_filters() {
             .name,
         "Aceh"
     );
+    assert_eq!(
+        repository
+            .find_province_by_coord(&context, 106.5, -6.5)
+            .await
+            .expect("find province by coordinate")
+            .expect("coordinate is inside province")
+            .id,
+        created.id
+    );
+    assert_eq!(
+        repository
+            .find_province_by_coord(&context, 0.0, 0.0)
+            .await
+            .expect("find outside province"),
+        None
+    );
+    assert!(matches!(
+        repository
+            .find_province_by_coord(&context, 181.0, 0.0)
+            .await,
+        Err(RepositoryError::BadArgs)
+    ));
     assert!(matches!(
         repository
             .create(&context, province_create("11", "Duplicate"))

@@ -12,7 +12,9 @@ regex-backed adapter, and the master-data cache contract and Moka adapter are
 implemented. Entity models, repository contracts, cached repository decorators,
 and app context/config models for topics, polling methods, provinces, and cities
 are implemented. Repository contracts return object-safe boxed `RepositoryFuture`
-values. PostgreSQL/PostGIS repository adapters for all four master entities use
+values. Province and city coordinate lookups and the national-boundary
+repository contract, PostgreSQL adapter, and cached decorator are implemented.
+PostgreSQL/PostGIS repository adapters for all four master entities use
 `shared/crates/pgdt` and SQLx, including the `AppContext` transaction bridge.
 Validator field-format, nonblank, selection-option, and city/province-code rules
 replace the former master-table CHECK constraints. JSON formatting uses
@@ -85,10 +87,12 @@ contracts with consumers. Do not add authentication, routes, write permissions,
 cache behavior beyond the explicit master-data cache contract, or publication
 guarantees by analogy; those are feature decisions.
 The PostgreSQL/PostGIS schema, SQLx/`pgdt` repository adapters, Moka cache adapter,
-and cached repository decorators exist; `AppEnv` models logger, PostgreSQL, and
-cache settings, but this scaffold does not yet construct a pool or cache in
-composition, load environment settings, or select an HTTP framework, broker, or
-runtime lifecycle.
+cached repository decorators, and national-boundary adapter exist; `AppEnv` models
+logger, PostgreSQL, and cache settings, but this scaffold does not yet construct a
+pool or cache in composition, load environment settings, or select an HTTP
+framework, broker, or runtime lifecycle. `master_database` seeds the
+`indonesia_boundary` singleton from a simplified Marine Regions EEZ/land union with
+CC BY 4.0 attribution.
 
 ## Style and verification
 
@@ -117,14 +121,21 @@ serialization. `CacheKind::{Individual, List}` selects the adapter TTL.
 `MokaCache::new(max_capacity, individual_ttl, list_ttl)` in
 `infrastructure/caching/cache/moka.rs` uses Moka with one bounded capacity and
 per-entry expiration. Cached repository decorators perform cache-aside reads and
-invalidate the entity namespace on writes. Reads in an active `AppContext`
+invalidate the entity namespace on writes. Province and city coordinate reads use
+the same cache path with coordinate-bit keys. Reads in an active `AppContext`
 transaction bypass the cache. A write-scoped drop guard invalidates on success,
 failure, or cancellation; successful transactional writes still invalidate before
-commit, so TTLs bound that local race. Cache tests live in
-`tests/unit/domain/cache_contract.rs`,
+commit, so TTLs bound that local race.
+
+`IndonesiaBoundaryRepository` is a repository contract backed by
+`PostgresIndonesiaBoundary` and `CachedIndonesiaBoundary`. It exposes singleton
+get/update operations and `is_inside`; the latter validates WGS84 coordinates and
+queries the `indonesia_boundary` table with `ST_Covers`, independent of province
+and city coverage. Cache tests live in `tests/unit/domain/cache_contract.rs`,
 `tests/unit/infrastructure/caching/cache.rs`, and
-`tests/unit/infrastructure/repository/`; private expiry and guard tests stay
-inline.
+`tests/unit/infrastructure/repository/`; national-boundary integration behavior
+lives in `tests/integration/infrastructure/repository/`; private expiry and guard
+tests stay inline.
 
 Follow the root Rust conventions, constructor injection, narrow visibility, and
 classified errors. Use one focused capability per module, explicit request/result

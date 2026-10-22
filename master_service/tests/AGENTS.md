@@ -61,7 +61,8 @@ source files with `#[path]` merely to move those tests into `tests/unit/`.
 `tests/integration/` verifies real boundary behavior. Group tests by the outermost
 boundary being exercised:
 
-- `infrastructure/repository/`: PostgreSQL/PostGIS repository behavior.
+- `infrastructure/repository/`: PostgreSQL/PostGIS repository behavior, including
+  coordinate and national-boundary containment.
 - `presentation/`: future transport and wire-contract behavior.
 - `composition/`: future startup, dependency wiring, and shutdown behavior.
 

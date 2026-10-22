@@ -1,5 +1,6 @@
 use master_service::domain::contracts::repository::{
-    CityRepository, PollingMethodRepository, ProvinceRepository, RepositoryFuture, TopicRepository,
+    CityRepository, IndonesiaBoundaryRepository, PollingMethodRepository, ProvinceRepository,
+    RepositoryFuture, TopicRepository,
 };
 
 #[test]
@@ -9,6 +10,7 @@ fn repository_contracts_are_object_safe_and_futures_are_send() {
         _: &dyn PollingMethodRepository,
         _: &dyn ProvinceRepository,
         _: &dyn CityRepository,
+        _: &dyn IndonesiaBoundaryRepository,
     ) {
     }
     fn future_is_send(_: RepositoryFuture<'static, ()>) {}

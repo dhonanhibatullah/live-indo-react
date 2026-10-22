@@ -4,7 +4,7 @@ use master_service::domain::{
         Pagination, city as city_contract, polling_method as polling_contract,
         province as province_contract, topic as topic_contract,
     },
-    models::entity::{Boundary, City, CityKind, PollingMethod, Province, Topic},
+    models::entity::{Boundary, City, CityKind, IndonesiaBoundary, PollingMethod, Province, Topic},
 };
 
 pub(crate) fn timestamp() -> DateTime<Utc> {
@@ -65,6 +65,17 @@ pub(crate) fn province() -> Province {
         created_at: timestamp(),
         updated_at: None,
         deleted_at: None,
+    }
+}
+
+pub(crate) fn indonesia_boundary() -> IndonesiaBoundary {
+    IndonesiaBoundary {
+        id: 1,
+        boundary: boundary(),
+        boundary_source: "test source".into(),
+        boundary_reference_date: None,
+        created_at: timestamp(),
+        updated_at: None,
     }
 }
 

@@ -2,7 +2,7 @@ use std::{collections::BTreeSet, error::Error, fs, path::Path};
 
 use master_database::{
     models::City,
-    seeds::{LoadError, cities, polling_methods, provinces},
+    seeds::{LoadError, cities, indonesia_boundary, polling_methods, provinces},
 };
 use sha2::{Digest, Sha256};
 
@@ -14,7 +14,8 @@ fn compressed_assets_preserve_exact_source_bytes_and_history_checksums() {
     let files = provinces::FILES
         .iter()
         .chain(cities::FILES)
-        .chain(polling_methods::FILES);
+        .chain(polling_methods::FILES)
+        .chain(indonesia_boundary::FILES);
 
     for (index, file) in files.enumerate() {
         assert_eq!(file.version, index as i64 + 1);
@@ -71,6 +72,13 @@ fn typed_groups_load_in_order_without_runtime_file_reads() {
         }
         city_files += 1;
     }
+
+    let boundary = indonesia_boundary::load().next().unwrap().unwrap();
+    assert_eq!(boundary.data.version, 47);
+    assert_eq!(boundary.data.name, "indonesia_boundary");
+    assert_eq!(boundary.file.filename, "0047_indonesia_boundary.json");
+    assert_eq!(boundary.data.srid, 4326);
+    assert_eq!(boundary.data.records.len(), 1);
 
     assert_eq!((province_files, city_files), (7, 38));
     assert_eq!((province_codes.len(), city_codes.len()), (38, 514));
