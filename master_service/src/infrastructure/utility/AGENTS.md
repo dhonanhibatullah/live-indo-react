@@ -39,3 +39,19 @@ and poisoned-lock failures; do not retry potentially partial writes or attempt
 recursive error logging. The writer is synchronous, so callers must
 account for blocking output in async paths. No global subscriber or trace
 extraction is installed. Behavior tests live in `tests/logger.rs`.
+
+## Validator adapter
+
+`validator/regex.rs` implements the domain `Validator` through
+`RegexValidator::new(Arc<dyn Logger>)`. It compiles the polling-method code, topic
+slug, province code, and city code patterns once at construction. Name and
+boundary-source methods reject blank or whitespace-only values. Selection options
+require an empty list for `agree_disagree`/`rating` and at least two distinct,
+nonblank, trimmed labels for `selection`. City/province validation checks both
+formats and the two-digit prefix.
+
+Validation logs one ERROR record for a rejected value, tagged by rule, with
+`error_code` and `reason` metadata; it never logs the raw input. Valid values do
+not touch the logger. Return the classified error even when logging fails. Tests
+live in `tests/validator.rs` and cover accepted/rejected formats, option policies,
+code agreement, and logging.

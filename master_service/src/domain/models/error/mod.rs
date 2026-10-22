@@ -1,8 +1,12 @@
 mod generic;
+mod repository;
+mod validator;
 
 use std::{error::Error as StdError, fmt};
 
 pub use generic::ErrorKind;
+pub use repository::RepositoryError;
+pub use validator::ValidatorError;
 
 /// A classified failure with an operation-specific message and optional cause.
 ///

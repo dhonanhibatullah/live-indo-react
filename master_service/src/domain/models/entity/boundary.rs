@@ -5,7 +5,7 @@ pub type Position = [f64; 2];
 /// A structurally valid 2D WGS84 MultiPolygon.
 ///
 /// Coordinates are polygons -> rings -> [longitude, latitude] positions.
-/// Topological validity is enforced by PostGIS, not by this type.
+/// Topological validity is not checked by this type or the master schema.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Boundary {
     coordinates: Vec<Vec<Vec<Position>>>,

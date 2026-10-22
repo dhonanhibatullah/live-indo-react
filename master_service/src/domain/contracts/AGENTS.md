@@ -13,10 +13,13 @@ values rather than drivers, sockets, SDK errors, or framework contexts.
 
 Introduce master-data persistence and external lookup capabilities only when a
 feature needs them. Every repository method takes `&AppContext` first, then the
-explicit entity/filter scope. Adapters must route execution through the context's
-opaque transaction handle without exposing native transaction types to callers.
-Do not add a transaction abstraction, publication contract, or distributed
-consistency guarantee just for symmetry.
+explicit entity/filter scope. Repository contracts return `RepositoryError`, using
+specific not-found/conflict codes where the repository owns that classification
+and generic buckets otherwise. The validator contract returns `ValidatorError`.
+Adapters must route execution through the context's opaque transaction handle
+without exposing native transaction types to callers. Do not add a transaction
+abstraction, publication contract, or distributed consistency guarantee just for
+symmetry.
 
 ## Compatibility and tests
 
@@ -36,3 +39,15 @@ calls return `()`; emission failures are silently ignored. Filtered calls produc
 no output. Metadata must not be mutated; absent metadata is an empty object.
 Infrastructure supplies the implementation; application can inject `&dyn Logger`
 or `Arc<dyn Logger>` as its ownership needs dictate.
+
+## Validator contract
+
+`utility/validator.rs` defines the object-safe `Validator: Send + Sync` trait.
+Methods are synchronous, take `&AppContext` first, and return
+`Result<(), ValidatorError>`. Field methods cover polling-method code/name, topic
+slug/name, province code/name/boundary source, and city code/name/boundary source.
+`topic_selection_options` takes the polling-method code plus ordered labels, and
+`city_province_code` checks the city prefix against the parent province code.
+Implementations must not mutate inputs, retain caller data, or perform I/O.
+Failures are classified with stable domain codes; logging is best effort and
+never changes the result. Boundary topology is outside this contract.

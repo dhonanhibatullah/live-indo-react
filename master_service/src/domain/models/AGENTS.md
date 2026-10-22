@@ -51,18 +51,30 @@ deliberately does not implement `Debug` because it contains a password.
 Environment parsing and pool construction belong to configuration/composition,
 not this model layer.
 
-## Generic errors
+## Error model
 
-`error/` exposes `Error` and `ErrorKind`. Keep generic classifications in
-`error/generic.rs`, retaining Lockmate's codes: NOT_FOUND, BAD_ARGS, CONFLICT,
-BAD_STATE, FORBIDDEN, UNAUTHORIZED, TIMEOUT, UNIMPLEMENTED, FAILURE, and UNKNOWN.
-These are classifications, not authentication features or transport status codes.
+`error/` exposes the generic `Error` and `ErrorKind` pair plus the
+category-specific `ValidatorError` and `RepositoryError` enums. Keep generic
+classifications in `error/generic.rs`, retaining Lockmate's codes: NOT_FOUND,
+BAD_ARGS, CONFLICT, BAD_STATE, FORBIDDEN, UNAUTHORIZED, TIMEOUT, UNIMPLEMENTED,
+FAILURE, and UNKNOWN. These are classifications, not authentication features or
+transport status codes.
 
-Construct with `Error::new(message, kind)` and attach native or domain causes with
-`.with_source(cause)`. Classify the current error through `.kind()` and inspect
-causes through `std::error::Error::source` and downcasting. Wrapping retains each
-error's own classification; it does not automatically reclassify an outer error.
-Display includes `[CODE] message` and optional source diagnostics. Presentation
-must select safe output rather than serialize this diagnostic chain. Keep sources
-`Send + Sync + 'static` for use across service tasks. Logger emission failures
-are silently ignored rather than returned as domain errors.
+`Error` combines a diagnostic message, generic kind, and optional native or
+domain cause. Construct it with `Error::new(message, kind)` and attach causes with
+`.with_source(cause)`. Wrapping retains each error's own classification; it does
+not automatically reclassify an outer error. Display includes `[CODE] message`
+and optional source diagnostics. Presentation must select safe output rather than
+serialize this diagnostic chain. Keep sources `Send + Sync + 'static` for use
+across service tasks. Logger emission failures are silently ignored rather than
+returned as domain errors.
+
+`ValidatorError` classifies environment and master-data validation rules with
+stable codes such as `TOPIC_SLUG_INVALID` and `CITY_PROVINCE_CODE_MISMATCH`.
+`RepositoryError` has generic operation buckets plus entity-specific not-found,
+conflict, and relation failures such as `TOPIC_SLUG_CONFLICT` and
+`CITY_PROVINCE_NOT_FOUND`. Only `Timeout` and `Failure` retain a native source;
+classification variants have none. Both enums expose `code()`; Display remains
+diagnostic. Add variants only for rules or failures the feature actually defines;
+do not invent lengths, formats, aggregation formulas, or permissions to fill an
+enum. Test stable codes, safe messages, and source preservation.

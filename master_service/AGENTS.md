@@ -6,13 +6,16 @@ data reference; database preparation remains in `master_database`.
 
 Read the [root guide](../AGENTS.md) first. This is an independent Rust 2024 crate
 with a binary entrypoint and a library exposing domain and infrastructure modules.
-Generic domain errors, logger models, the logger utility contract, and its
-writer adapter are implemented. Entity models, repository contracts, and app
-context/config models for topics, polling methods, provinces, and cities are
-implemented. `shared/crates/pgdt` is available for future infrastructure but
-is not yet a dependency. JSON formatting uses `serde_json` only in infrastructure.
-`src/main.rs` remains a placeholder. The remaining modules below are the target
-architecture, not an implemented master-data runtime.
+Generic domain errors, validator and repository error models, logger models, the
+logger utility contract and its writer adapter, and the validator contract and
+regex-backed adapter are implemented. Entity models, repository contracts, and
+app context/config models for topics, polling methods, provinces, and cities are
+implemented. Repository contracts return `RepositoryError`. Validator field-format,
+nonblank, selection-option, and city/province-code rules replace the former
+master-table CHECK constraints. `shared/crates/pgdt` is available for future
+infrastructure but is not yet a dependency. JSON formatting uses `serde_json` only
+in infrastructure. `src/main.rs` remains a placeholder. The remaining modules
+below are the target architecture, not an implemented master-data runtime.
 
 ## Target source layout
 
@@ -59,12 +62,12 @@ those contracts against selected drivers or providers. Master-data runtime
 operations are not implemented by this scaffold.
 
 The master schema lives in [master_database/docs/erd.dbml](../master_database/docs/erd.dbml).
-Future features should preserve stable topic slugs and regional/method codes,
-validate polling-method-dependent topic options, and keep topic polling
-configuration fixed after responses exist. `selection_options` is an ordered
-native string array; reaction selection indexes depend on that ordering. There
-are no database business triggers for these policies, and implementing their
-cross-service checks needs an explicit feature design.
+The validator preserves stable topic slugs and regional/method code formats and
+checks polling-method-dependent selection options. Future features must keep topic
+polling configuration fixed after responses exist. `selection_options` is an
+ordered native string array; reaction selection indexes depend on that ordering.
+There are no database CHECK constraints or business triggers for these policies,
+and implementing cross-service checks needs an explicit feature design.
 
 Reaction submission belongs to `reaction_service`; WebSocket subscriber handling
 and fan-out belong to `broadcast_service`. Do not import another service's internal
@@ -87,6 +90,14 @@ metadata becomes `{}`. Writes are synchronous and can block. Logger methods retu
 `()` and silently ignore emission failures without retries or recursive logging.
 No process-global logger or environment loading is installed; callers supply
 correlation identifiers through `AppContext`.
+
+The validator contract is a synchronous, object-safe `Validator: Send + Sync`
+trait. Every method takes `&AppContext` first and a borrowed field value, then
+returns `Result<(), ValidatorError>`; option and city/province rules take explicit
+related values. `RegexValidator::new(Arc<dyn Logger>)` compiles the format patterns
+and logs each rejected value once at ERROR level with safe `error_code` and
+`reason` metadata. Valid input does not log. Validation never mutates inputs or
+performs I/O. Boundary topology is not validated by the service or the schema.
 
 Follow the root Rust conventions, constructor injection, narrow visibility, and
 classified errors. Use one focused capability per module, explicit request/result
