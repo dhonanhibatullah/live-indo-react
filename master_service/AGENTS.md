@@ -73,9 +73,9 @@ to a service without an actual persistence requirement.
 
 Presentation maps transport input to domain usecase requests. Application owns
 business validation and calls injected domain contracts. Infrastructure implements
-those contracts against selected drivers or providers. Usecase implementations are
-available, but HTTP routes and composition wiring are not implemented by this
-scaffold.
+those contracts against selected drivers or providers. Usecase implementations
+and unary gRPC presentation adapters are available, but server
+composition/lifecycle wiring and HTTP routes are not implemented by this scaffold.
 
 The master schema lives in [master_database/docs/erd.dbml](../master_database/docs/erd.dbml).
 The validator preserves stable topic slugs and regional/method code formats and
@@ -92,7 +92,8 @@ contracts with consumers. Do not add authentication, routes, write permissions,
 cache behavior beyond the explicit master-data cache contract, or publication
 guarantees by analogy; those are feature decisions.
 The PostgreSQL/PostGIS schema, SQLx/`pgdt` repository adapters, Moka cache adapter,
-cached repository decorators, and national-boundary adapter exist; `AppEnv` models
+cached repository decorators, national-boundary adapter, and gRPC presentation
+adapters exist; `AppEnv` models
 logger, PostgreSQL, and cache settings, but this scaffold does not yet construct a
 pool or cache in composition, load environment settings, or select an HTTP
 framework, broker, or runtime lifecycle. `master_database` seeds the

@@ -6,26 +6,52 @@ utility contracts, concrete application implementations, or infrastructure.
 
 ## Layout and mapping
 
-Organize `http/` into focused handlers, request/response DTOs or message
-DTOs, explicit mappers, routes/registration, and transport helpers as needed.
-Keep dependencies in constructors and handlers small. Parse transport shape here;
-application validates business values. Map declared input fields explicitly so
-server-owned fields cannot be overwritten through generic deserialization.
+```text
+grpc/
+  server/
+    shared/context.rs
+    management/<service>.rs
+    geographic/<service>.rs
+    topic/<service>.rs
+  mapper/
+    entity.rs geometry.rs audit.rs request.rs error.rs
+  interceptor/app_context.rs
+  register/{management,geographic,topic}.rs
+```
 
-Handlers map explicit master-data DTOs into domain usecase requests and map
-results/errors to the selected transport contract. Do not invent routes, input
-limits, write permissions, or access policy before the API feature defines them.
-Enforce the chosen transport limits and preserve cancellation when implemented.
-Never report a failed persistence operation as success.
+Per-service handlers are single files under their group; they are adapters, not
+their own implementation folders. Mapper, interceptor, and registration folders
+stay separate because they are shared transport infrastructure.
 
-Only serialize safe wire DTOs, never persistence entities or diagnostic error
-chains. Return sanitized operational failures. Do not import Lockmate credential middleware by analogy; feature requirements
-must define access policy without changing anonymous reaction participation. Keep transport protocol and event contract
-changes coordinated with their consumers.
+Handlers:
+- Implement generated tonic traits with `#[tonic::async_trait]`.
+- Extract `AppContext` from request extensions.
+- Map proto requests to usecase requests, call the usecase, and map the result.
+- Contain no business rules, persistence access, or duplicate logging.
 
-## Tests
+Map generated messages through explicit mapper functions. Never serialize domain
+entities directly. Map `UsecaseError` once through `mapper/error.rs` to a safe
+gRPC status and typed `Error` detail; never expose source chains.
 
-Cover DTO mapping, malformed input, safe error responses, cancellation, and the
-mapping of invalid input, missing records, conflicts, and persistence failures in
-`tests/unit/presentation/`. Use `tests/integration/presentation/` for real
-transport behavior once it exists.
+## Metadata contract
+
+Actor and trace context travel in gRPC metadata, not request messages:
+
+- `x-trace-id`: required, one non-zero UUID string.
+- `x-actor`: optional opaque caller value, at most once.
+
+The context interceptor calls the `misc/app_context` usecase, which generates the
+service-local execution ID, then inserts `AppContext` into request extensions.
+The actor is correlation context, never authentication or authorization. No
+client credentials, bearer tokens, IP allowlists, or browser gRPC/WebSockets are
+introduced.
+
+## Registration
+
+`register/` combines generated service implementations into `tonic::service::Routes`.
+Composition constructs usecases and applies the context interceptor; presentation
+does not start the server or own process lifecycle.
+
+Use `tests/unit/presentation/grpc/` for mapping, metadata, and handler tests.
+Use `tests/integration/presentation/grpc/` for tonic transport tests with fake
+usecases; no database is needed.
