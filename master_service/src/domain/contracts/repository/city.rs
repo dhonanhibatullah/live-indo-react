@@ -1,14 +1,11 @@
-use std::future::Future;
-
 use chrono::NaiveDate;
 
 use crate::domain::models::{
     AppContext,
     entity::{Boundary, City, CityKind},
-    error::RepositoryError,
 };
 
-use super::Pagination;
+use super::{Pagination, RepositoryFuture};
 
 /// Persistence for city/regency master data.
 ///
@@ -18,47 +15,43 @@ use super::Pagination;
 /// `CITY_PROVINCE_NOT_FOUND`.
 pub trait CityRepository: Send + Sync {
     /// Insert a city/regency and return the persisted state.
-    fn create(
-        &self,
-        context: &AppContext,
+    fn create<'a>(
+        &'a self,
+        context: &'a AppContext,
         input: CreateArgs,
-    ) -> impl Future<Output = Result<City, RepositoryError>> + Send;
+    ) -> RepositoryFuture<'a, City>;
 
     /// Return a city/regency by ID, including a deleted row.
-    fn find_by_id(
-        &self,
-        context: &AppContext,
+    fn find_by_id<'a>(
+        &'a self,
+        context: &'a AppContext,
         id: i64,
-    ) -> impl Future<Output = Result<Option<City>, RepositoryError>> + Send;
+    ) -> RepositoryFuture<'a, Option<City>>;
 
     /// Return a city/regency by Kemendagri code, including a deleted row.
-    fn find_by_kemendagri_code(
-        &self,
-        context: &AppContext,
-        code: &str,
-    ) -> impl Future<Output = Result<Option<City>, RepositoryError>> + Send;
+    fn find_by_kemendagri_code<'a>(
+        &'a self,
+        context: &'a AppContext,
+        code: &'a str,
+    ) -> RepositoryFuture<'a, Option<City>>;
 
     /// List cities/regencies that match the filter; deleted rows are excluded unless requested.
-    fn list(
-        &self,
-        context: &AppContext,
+    fn list<'a>(
+        &'a self,
+        context: &'a AppContext,
         filter: ListArgs,
-    ) -> impl Future<Output = Result<Vec<City>, RepositoryError>> + Send;
+    ) -> RepositoryFuture<'a, Vec<City>>;
 
     /// Update a city/regency that is not deleted and return its new state.
-    fn update(
-        &self,
-        context: &AppContext,
+    fn update<'a>(
+        &'a self,
+        context: &'a AppContext,
         id: i64,
         changes: UpdateArgs,
-    ) -> impl Future<Output = Result<City, RepositoryError>> + Send;
+    ) -> RepositoryFuture<'a, City>;
 
     /// Delete a city/regency without releasing its code.
-    fn delete(
-        &self,
-        context: &AppContext,
-        id: i64,
-    ) -> impl Future<Output = Result<(), RepositoryError>> + Send;
+    fn delete<'a>(&'a self, context: &'a AppContext, id: i64) -> RepositoryFuture<'a, ()>;
 }
 
 #[derive(Clone, Debug, PartialEq)]

@@ -1,8 +1,6 @@
-use std::future::Future;
+use crate::domain::models::{AppContext, entity::PollingMethod};
 
-use crate::domain::models::{AppContext, entity::PollingMethod, error::RepositoryError};
-
-use super::Pagination;
+use super::{Pagination, RepositoryFuture};
 
 /// Persistence for the seeded polling-method catalog.
 ///
@@ -10,40 +8,36 @@ use super::Pagination;
 /// updates descriptive fields, or deletes them. Codes are immutable.
 pub trait PollingMethodRepository: Send + Sync {
     /// Return a method by ID, including a deleted row.
-    fn find_by_id(
-        &self,
-        context: &AppContext,
+    fn find_by_id<'a>(
+        &'a self,
+        context: &'a AppContext,
         id: i64,
-    ) -> impl Future<Output = Result<Option<PollingMethod>, RepositoryError>> + Send;
+    ) -> RepositoryFuture<'a, Option<PollingMethod>>;
 
     /// Return a method by code, including a deleted row.
-    fn find_by_code(
-        &self,
-        context: &AppContext,
-        code: &str,
-    ) -> impl Future<Output = Result<Option<PollingMethod>, RepositoryError>> + Send;
+    fn find_by_code<'a>(
+        &'a self,
+        context: &'a AppContext,
+        code: &'a str,
+    ) -> RepositoryFuture<'a, Option<PollingMethod>>;
 
     /// List methods that match the filter; deleted rows are excluded unless requested.
-    fn list(
-        &self,
-        context: &AppContext,
+    fn list<'a>(
+        &'a self,
+        context: &'a AppContext,
         filter: ListArgs,
-    ) -> impl Future<Output = Result<Vec<PollingMethod>, RepositoryError>> + Send;
+    ) -> RepositoryFuture<'a, Vec<PollingMethod>>;
 
     /// Update a method that is not deleted and return its new state.
-    fn update(
-        &self,
-        context: &AppContext,
+    fn update<'a>(
+        &'a self,
+        context: &'a AppContext,
         id: i64,
         changes: UpdateArgs,
-    ) -> impl Future<Output = Result<PollingMethod, RepositoryError>> + Send;
+    ) -> RepositoryFuture<'a, PollingMethod>;
 
     /// Delete a method without releasing its code.
-    fn delete(
-        &self,
-        context: &AppContext,
-        id: i64,
-    ) -> impl Future<Output = Result<(), RepositoryError>> + Send;
+    fn delete<'a>(&'a self, context: &'a AppContext, id: i64) -> RepositoryFuture<'a, ()>;
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]

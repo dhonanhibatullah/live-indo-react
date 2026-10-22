@@ -10,12 +10,14 @@ Generic domain errors, validator and repository error models, logger models, the
 logger utility contract and its writer adapter, and the validator contract and
 regex-backed adapter are implemented. Entity models, repository contracts, and
 app context/config models for topics, polling methods, provinces, and cities are
-implemented. Repository contracts return `RepositoryError`. Validator field-format,
-nonblank, selection-option, and city/province-code rules replace the former
-master-table CHECK constraints. `shared/crates/pgdt` is available for future
-infrastructure but is not yet a dependency. JSON formatting uses `serde_json` only
-in infrastructure. `src/main.rs` remains a placeholder. The remaining modules
-below are the target architecture, not an implemented master-data runtime.
+implemented. Repository contracts return object-safe boxed `RepositoryFuture`
+values. PostgreSQL/PostGIS repository adapters for all four master entities use
+`shared/crates/pgdt` and SQLx, including the `AppContext` transaction bridge.
+Validator field-format, nonblank, selection-option, and city/province-code rules
+replace the former master-table CHECK constraints. JSON formatting uses
+`serde_json` only in infrastructure. `src/main.rs` remains a placeholder. The
+remaining modules below are the target architecture, not an implemented
+master-data runtime.
 
 ## Target source layout
 
@@ -74,9 +76,9 @@ and fan-out belong to `broadcast_service`. Do not import another service's inter
 modules. Expose explicit domain types at boundaries and coordinate future external
 contracts with consumers. Do not add authentication, routes, write permissions,
 cache behavior, or publication guarantees by analogy; those are feature decisions.
-The PostgreSQL/PostGIS schema exists; `AppEnv` models logger and PostgreSQL
-settings, but this scaffold does not yet construct a pool or select a runtime
-database driver, HTTP framework, broker, or async runtime.
+The PostgreSQL/PostGIS schema and SQLx/`pgdt` repository adapters exist; `AppEnv`
+models logger and PostgreSQL settings, but this scaffold does not yet construct a
+pool in composition or select an HTTP framework, broker, or runtime lifecycle.
 
 ## Style and verification
 

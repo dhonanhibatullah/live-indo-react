@@ -23,9 +23,12 @@ symmetry.
 
 ## Compatibility and tests
 
-Choose generics or object-safe traits deliberately. For async I/O, make future
-bounds and dispatch compatibility explicit when implementation requires them;
-use the smallest dependency surface that works. Document cancellation, failure,
+Choose generics or object-safe traits deliberately. Master repository traits are
+object-safe through `RepositoryFuture<'a, T>`, a boxed `Send` future with an
+explicit context/self lifetime. This supports `Arc<dyn Repository>` composition
+without an async-trait macro. For async I/O, make future bounds and dispatch
+compatibility explicit when implementation requires them; use the smallest
+dependency surface that works. Document cancellation, failure,
 and retry semantics on operations that need them. Align traits, implementations,
 callers, and test doubles together. Contract tests should check observable behavior
 rather than the chosen adapter library.

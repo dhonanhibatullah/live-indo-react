@@ -40,6 +40,14 @@ recursive error logging. The writer is synchronous, so callers must
 account for blocking output in async paths. No global subscriber or trace
 extraction is installed. Behavior tests live in `tests/logger.rs`.
 
+## Transaction bridge
+
+`transactor/pgdt_context.rs` implements `pgdt::TransactionContext` for
+`AppContext`. It returns the pgdt handle held by the opaque `AppTransaction` and
+attaches a new handle while preserving actor, trace, and execution metadata. Domain
+code remains independent of pgdt. A context whose opaque handle is not a pgdt
+transaction is an unrecoverable infrastructure invariant violation.
+
 ## Validator adapter
 
 `validator/regex.rs` implements the domain `Validator` through

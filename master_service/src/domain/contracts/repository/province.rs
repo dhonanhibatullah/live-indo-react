@@ -1,14 +1,11 @@
-use std::future::Future;
-
 use chrono::NaiveDate;
 
 use crate::domain::models::{
     AppContext,
     entity::{Boundary, Province},
-    error::RepositoryError,
 };
 
-use super::Pagination;
+use super::{Pagination, RepositoryFuture};
 
 /// Persistence for Indonesian province master data.
 ///
@@ -17,47 +14,43 @@ use super::Pagination;
 /// `PROVINCE_KEMENDAGRI_CODE_CONFLICT`.
 pub trait ProvinceRepository: Send + Sync {
     /// Insert a province and return the persisted state.
-    fn create(
-        &self,
-        context: &AppContext,
+    fn create<'a>(
+        &'a self,
+        context: &'a AppContext,
         input: CreateArgs,
-    ) -> impl Future<Output = Result<Province, RepositoryError>> + Send;
+    ) -> RepositoryFuture<'a, Province>;
 
     /// Return a province by ID, including a deleted row.
-    fn find_by_id(
-        &self,
-        context: &AppContext,
+    fn find_by_id<'a>(
+        &'a self,
+        context: &'a AppContext,
         id: i64,
-    ) -> impl Future<Output = Result<Option<Province>, RepositoryError>> + Send;
+    ) -> RepositoryFuture<'a, Option<Province>>;
 
     /// Return a province by Kemendagri code, including a deleted row.
-    fn find_by_kemendagri_code(
-        &self,
-        context: &AppContext,
-        code: &str,
-    ) -> impl Future<Output = Result<Option<Province>, RepositoryError>> + Send;
+    fn find_by_kemendagri_code<'a>(
+        &'a self,
+        context: &'a AppContext,
+        code: &'a str,
+    ) -> RepositoryFuture<'a, Option<Province>>;
 
     /// List provinces that match the filter; deleted rows are excluded unless requested.
-    fn list(
-        &self,
-        context: &AppContext,
+    fn list<'a>(
+        &'a self,
+        context: &'a AppContext,
         filter: ListArgs,
-    ) -> impl Future<Output = Result<Vec<Province>, RepositoryError>> + Send;
+    ) -> RepositoryFuture<'a, Vec<Province>>;
 
     /// Update a province that is not deleted and return its new state.
-    fn update(
-        &self,
-        context: &AppContext,
+    fn update<'a>(
+        &'a self,
+        context: &'a AppContext,
         id: i64,
         changes: UpdateArgs,
-    ) -> impl Future<Output = Result<Province, RepositoryError>> + Send;
+    ) -> RepositoryFuture<'a, Province>;
 
     /// Delete a province without releasing its code.
-    fn delete(
-        &self,
-        context: &AppContext,
-        id: i64,
-    ) -> impl Future<Output = Result<(), RepositoryError>> + Send;
+    fn delete<'a>(&'a self, context: &'a AppContext, id: i64) -> RepositoryFuture<'a, ()>;
 }
 
 #[derive(Clone, Debug, PartialEq)]
