@@ -29,12 +29,13 @@ Apply it after the geographic files. No initial topic catalog is assumed.
 
 Topics reference polling_methods by ID, resolving stable codes rather than assuming
 generated IDs. selection_options is an ordered native text array, empty by default.
-Future master_service validation must require empty options for agree_disagree and
-rating, and at least two distinct, nonblank, trimmed labels for selection. Choices
-are case-sensitive. Rating responses are integers from 0 through 10; selection
-responses choose one option. Master_service must preserve method code meanings and
-freeze a topic's method/options once responses exist. No business validation
-triggers are installed here; response storage/validation is outside this crate.
+The master_service validator requires empty options for agree_disagree and rating,
+and at least two distinct, nonblank, trimmed labels for selection. Choices are
+case-sensitive. Rating responses are integers from 0 through 10; selection
+responses choose one option. Application code must preserve method code meanings
+and freeze a topic's method/options once responses exist. No business validation
+triggers or CHECK constraints are installed here; field validation belongs to
+master_service, and response storage/validation is outside this crate.
 
 PostGIS and pg_trgm must be available on the PostgreSQL server. The extension
 migration enables both before creating tables and indexes.
@@ -48,12 +49,14 @@ MultiPolygon supports disconnected islands. Normalize imported polygons with
 ST_Multi and transform source coordinates with ST_Transform before storage;
 ST_SetSRID alone does not reproject coordinates. Use one compatible boundary
 source/revision across administrative levels and retain its attribution below.
+Migrations do not enforce ST_IsValid or ST_IsEmpty; boundary quality checks are
+separate from schema preparation.
 
 Derive map labels with ST_PointOnSurface(boundary), viewport bounds with
 ST_Envelope(boundary), and area in square metres with ST_Area(boundary::geography).
 Do not treat geometry area in EPSG:4326 as square metres. A label point is not an
 administrative capital. Simplify geometry only for map delivery; retain canonical
-boundaries here. Validate city/province code and geographic consistency at import;
+boundaries here. Validate city/province code and administrative consistency at import;
 province_id is the authoritative administrative relationship, not a spatial guess.
 
 DBML's portable index syntax does not express GiST or GIN operator classes.
@@ -141,7 +144,7 @@ Table topics [headercolor: #F59E0B] {
 }
 
 Table provinces [headercolor: #059669] {
-    Note: 'Indonesian province master data. Require a valid, nonempty canonical boundary before insertion. Keep codes as text; do not hard-code province counts. Geographic indexes and derived map values are specified in the project note.'
+    Note: 'Indonesian province master data. Store a canonical 2D boundary and keep codes as text; do not hard-code province counts. Topological boundary validity is not enforced by the database. Geographic indexes and derived map values are specified in the project note.'
 
     id                      bigint      [pk, increment]
     kemendagri_code         varchar(2)  [not null, note: 'Two-digit province code from the selected Kemendagri reference edition; separate from BPS codes.']

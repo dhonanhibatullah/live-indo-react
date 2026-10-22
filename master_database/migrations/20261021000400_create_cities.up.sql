@@ -32,7 +32,7 @@ COMMENT ON TABLE cities IS
 COMMENT ON COLUMN cities.kemendagri_code IS
     'Full Kemendagri code in PP.CC form; imports must verify PP against the parent province code.';
 COMMENT ON COLUMN cities.boundary IS
-    'Valid, nonempty 2D WGS84 MultiPolygon; geographic consistency with the province is checked at import.';
+    '2D WGS84 MultiPolygon; X is longitude and Y is latitude. Topological validity is not enforced by the database.';
 COMMENT ON COLUMN cities.boundary_source IS
     'Dataset/publisher reference, version or release identifier, and attribution.';
 COMMENT ON COLUMN cities.boundary_reference_date IS

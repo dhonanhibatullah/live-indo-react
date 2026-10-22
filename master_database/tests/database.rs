@@ -615,7 +615,7 @@ async fn topics_reference_methods_and_store_native_arrays_without_business_trigg
     ] {
         assert!(sqlx::query(sql).execute(&fixture.pool).await.is_err());
     }
-    // Method-dependent rules intentionally belong to the future master_service.
+    // Method-dependent rules belong to the master_service validator.
     sqlx::query("UPDATE topics SET selection_options='{}' WHERE id=$1")
         .bind(id)
         .execute(&fixture.pool)

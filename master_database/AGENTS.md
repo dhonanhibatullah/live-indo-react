@@ -63,10 +63,11 @@ database counterparts. `#[path]` exposes them as `seeds::provinces`,
   Preserve existing data; retain conflict-safe insertion and reselect behavior.
 - Resolve city parents by province code, never assumed identity values. Validate
   the city code prefix and reject missing parents for new rows.
-- Keep codes as strings and boundaries as valid, nonempty 2D WGS84 MultiPolygons
-  (SRID 4326, longitude then latitude). Preserve source attribution, license, and
-  nullable reference dates. Do not claim polygon containment validation: the
-  current importer checks administrative codes/parents and SQL geometry validity.
+- Keep codes as strings and boundaries as 2D WGS84 MultiPolygons (SRID 4326,
+  longitude then latitude). Preserve source attribution, license, and nullable
+  reference dates. The schema does not enforce topological validity; the importer
+  checks administrative codes/parents but not polygon validity or containment.
+  Seed data is expected to be valid, and tests assert imported geometries are valid.
 - Applied seeds are immutable, including whitespace: checksums hash source bytes.
   Corrections need a new version and explicit update behavior; the current runner
   preserves existing rows. Adding versions also requires updating `build.rs`'s
@@ -87,11 +88,11 @@ connection strings, raw database error payloads, or geometry documents. Use the
 existing simple console helpers (INFO to stdout, ERROR to stderr); console write
 failures stay silent. No logging framework is required.
 
-Keep SQL migrations ordered and paired with reverse operations. Preserve database
-constraints, stable identifiers, foreign keys, GiST boundary indexes, and GIN
-trigram name indexes. Enable PostGIS and pg_trgm before creating their indexes.
-Update the ERD alongside schema changes. Do not regenerate migrations blindly
-from DBML.
+Keep SQL migrations ordered and paired with reverse operations. Preserve required
+columns, stable identifiers, foreign keys, unique indexes, GiST boundary indexes,
+and GIN trigram name indexes. Enable PostGIS and pg_trgm before creating their
+indexes. Do not add CHECK constraints for master-data field rules. Update the ERD
+alongside schema changes. Do not regenerate migrations blindly from DBML.
 
 ## Verification
 
@@ -125,10 +126,11 @@ sharing compression, checksums, advisory locking, and transaction/history behavi
 with geographic seeds. It does not have SRID or upstream boundary metadata.
 
 Topics have a required polling-method reference and ordered native `TEXT[]`
-options. SQL enforces the foreign key, required fields, and array shape. Do not
-add business validation triggers: future `master_service` code owns method code
-immutability, method-dependent option validation, and freezing topic polling
-configuration after responses exist. Selection requires at least two distinct,
-nonblank, trimmed choices; other methods require empty options. Rating is integer
-0–10 and selection chooses one option. This crate has no initial topic seed or
-response validation implementation.
+options. Migrations enforce required columns, the foreign key, and the array
+column type. Do not add CHECK constraints or business validation triggers here:
+the `master_service` validator owns code/slug/name/source formats and
+method-dependent option checks, while application code owns method code
+immutability and freezing polling configuration after responses exist. Selection
+requires at least two distinct, nonblank, trimmed choices; other methods require
+empty options. Rating is integer 0–10 and selection chooses one option. This crate
+has no initial topic seed or response validation implementation.

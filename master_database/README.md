@@ -137,16 +137,17 @@ The catalog seed `0046_polling_methods.json` adds `agree_disagree`, `rating`, an
 of assuming generated IDs. The complete fresh workflow applies six schema
 migrations and 46 seed files, inserting 555 reference rows.
 
-The database enforces required fields, the foreign key, and a one-dimensional
-options array starting at index 1 (or an empty array). There are no business
-validation triggers. The future `master_service` must validate that:
+Migrations enforce required columns and the foreign key; there are no CHECK
+constraints or business validation triggers. The `master_service` validator
+enforces:
 
 - Agree/disagree and rating topics have no selection options.
 - Selection topics have at least two distinct, nonblank, trimmed choices; labels
   are case-sensitive and their order is preserved.
-- Ratings are integers from 0 through 10; selection responses choose one option.
-- Method codes retain their meaning, and a topic's method/options stay fixed once
-  responses exist.
+
+Application code must still ensure that ratings are integers from 0 through 10,
+selection responses choose one option, method codes retain their meaning, and a
+topic's method/options stay fixed once responses exist.
 
 The geographic seed files retain versions 1–45 and their exact bytes. The method
 catalog uses only `version`, `name`, and `records`, without geographic metadata.

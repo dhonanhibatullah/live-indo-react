@@ -22,7 +22,7 @@ COMMENT ON TABLE provinces IS 'Indonesian province reference data with canonical
 COMMENT ON COLUMN provinces.kemendagri_code IS
     'Two-digit Kemendagri province code, separate from BPS codes.';
 COMMENT ON COLUMN provinces.boundary IS
-    'Valid, nonempty 2D WGS84 MultiPolygon; X is longitude and Y is latitude.';
+    '2D WGS84 MultiPolygon; X is longitude and Y is latitude. Topological validity is not enforced by the database.';
 COMMENT ON COLUMN provinces.boundary_source IS
     'Dataset/publisher reference, version or release identifier, and attribution.';
 COMMENT ON COLUMN provinces.boundary_reference_date IS

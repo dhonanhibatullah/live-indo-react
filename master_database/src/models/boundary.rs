@@ -4,8 +4,8 @@ use serde::{Deserialize, Serialize};
 ///
 /// Coordinates are polygons -> rings -> [longitude, latitude] positions.
 /// The enclosing seed file declares the SRID; importers must require EPSG:4326.
-/// Ring closure, nonempty geometry, and topology are checked during import and
-/// by PostGIS, not by deserialization alone.
+/// Deserialization checks only the GeoJSON shape; ring closure, nonempty
+/// geometry, and topology require separate validation.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum Boundary {
