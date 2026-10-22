@@ -38,6 +38,19 @@ without a serialization-library dependency. Convert errors explicitly with
 `MetaValue::from_error`; diagnostic strings must be safe to log. Logging is
 best effort and has no dedicated error model.
 
+## App models
+
+`app/` defines request and process vocabulary shared across layers. `AppInfo`
+carries compile-time service name and version. `AppContext` carries an optional
+opaque actor value plus trace, execution, and optional transaction handles; the
+actor is never authentication or authorization. `AppTransaction` is an opaque,
+cloneable handle with identity-based equality and typed downcasting for
+infrastructure adapters. `AppEnv` holds logger format/level plus PostgreSQL host,
+port, credentials, database, SSL mode, pool size, and connect timeout; it
+deliberately does not implement `Debug` because it contains a password.
+Environment parsing and pool construction belong to configuration/composition,
+not this model layer.
+
 ## Generic errors
 
 `error/` exposes `Error` and `ErrorKind`. Keep generic classifications in

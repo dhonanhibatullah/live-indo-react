@@ -7,11 +7,15 @@ use std::{
 use master_service::{
     domain::{
         contracts::utility::logger::Logger,
-        models::logger::{Format, Level, Meta, MetaValue},
+        models::{
+            AppContext,
+            logger::{Format, Level, Meta, MetaValue},
+        },
     },
     infrastructure::utility::logger::WriterLogger,
 };
 use serde_json::{Value, json};
+use uuid::Uuid;
 
 #[derive(Clone, Default)]
 struct Buffer(Arc<Mutex<Vec<u8>>>);
@@ -37,6 +41,15 @@ impl Write for Buffer {
 
     fn flush(&mut self) -> io::Result<()> {
         Ok(())
+    }
+}
+
+fn context() -> AppContext {
+    AppContext {
+        actor: Some("anonymous".into()),
+        execution_id: Some(Uuid::from_u128(1)),
+        trace_id: Some(Uuid::from_u128(2)),
+        ..AppContext::default()
     }
 }
 
@@ -75,12 +88,13 @@ fn every_threshold_filters_all_severity_methods_in_both_formats() {
             let output = Buffer::default();
             let adapter = WriterLogger::new(output.clone(), format, threshold);
             let logger: &dyn Logger = &adapter;
+            let context = AppContext::default();
 
-            logger.error("test/error", "failed", None);
-            logger.warn("test/warn", "warning", None);
-            logger.info("test/info", "accepted", None);
-            logger.debug("test/debug", "diagnostic", None);
-            logger.log(Level::None, "test/none", "never emitted", None);
+            logger.error(&context, "test/error", "failed", None);
+            logger.warn(&context, "test/warn", "warning", None);
+            logger.info(&context, "test/info", "accepted", None);
+            logger.debug(&context, "test/debug", "diagnostic", None);
+            logger.log(&context, Level::None, "test/none", "never emitted", None);
 
             let text = output.text();
             assert_eq!(text.lines().count(), expected, "{format} {threshold}");
@@ -89,15 +103,50 @@ fn every_threshold_filters_all_severity_methods_in_both_formats() {
                 let records = output.records();
                 for (record, expected_level) in records.iter().zip(levels) {
                     assert_eq!(record["level"], expected_level);
+                    assert_eq!(record["actor"], "");
+                    assert_eq!(record["execution_id"], "");
+                    assert_eq!(record["trace_id"], "");
                     assert_eq!(record["meta"], json!({}));
                     assert!(record["time_unix_ms"].as_u64().unwrap() > 0);
                 }
             } else {
                 for (line, expected_level) in text.lines().zip(levels) {
                     assert!(line.contains(&format!("level={expected_level} ")));
+                    assert!(line.contains("actor=\"\" execution_id=\"\" trace_id=\"\""));
                     assert!(line.ends_with("meta={}"));
                 }
             }
+        }
+    }
+}
+
+#[test]
+fn context_identifiers_are_emitted_in_both_formats() {
+    let execution_id = Uuid::from_u128(3);
+    let trace_id = Uuid::from_u128(4);
+    let context = AppContext {
+        actor: Some("anonymous".into()),
+        execution_id: Some(execution_id),
+        trace_id: Some(trace_id),
+        ..AppContext::default()
+    };
+
+    for format in [Format::Plain, Format::Json] {
+        let output = Buffer::default();
+        let logger = WriterLogger::new(output.clone(), format, Level::Info);
+
+        logger.info(&context, "test/context", "identified", None);
+
+        let text = output.text();
+        if format == Format::Json {
+            let record = &output.records()[0];
+            assert_eq!(record["actor"], "anonymous");
+            assert_eq!(record["execution_id"], execution_id.to_string());
+            assert_eq!(record["trace_id"], trace_id.to_string());
+        } else {
+            assert!(text.contains(&format!(
+                "actor=\"anonymous\" execution_id=\"{execution_id}\" trace_id=\"{trace_id}\""
+            )));
         }
     }
 }
@@ -127,7 +176,7 @@ fn json_preserves_metadata_types_and_normalizes_errors_without_mutating_input() 
     let output = Buffer::default();
     let logger = WriterLogger::new(output.clone(), Format::Json, Level::Debug);
 
-    logger.error("delivery/send", "send failed", Some(&meta));
+    logger.error(&context(), "delivery/send", "send failed", Some(&meta));
 
     assert_eq!(meta, original);
     let record = &output.records()[0];
@@ -161,7 +210,7 @@ fn nonfinite_floats_are_null_and_input_remains_unchanged() {
     let output = Buffer::default();
     let logger = WriterLogger::new(output.clone(), Format::Json, Level::Info);
 
-    logger.info("test/float", "normalized", Some(&meta));
+    logger.info(&context(), "test/float", "normalized", Some(&meta));
 
     assert_eq!(
         output.records()[0]["meta"],
@@ -180,8 +229,12 @@ fn both_formats_escape_text_to_prevent_extra_log_lines() {
         let meta = Meta::from([("detail\nkey".into(), "line\nbreak\r\t\"".into())]);
         let tag = "test\nforged\r\"";
         let message = "hello\nworld\r\t\"\\";
+        let context = AppContext {
+            actor: Some("actor\nforged\r\"".into()),
+            ..AppContext::default()
+        };
 
-        logger.info(tag, message, Some(&meta));
+        logger.info(&context, tag, message, Some(&meta));
 
         let text = output.text();
         assert_eq!(text.lines().count(), 1);
@@ -191,10 +244,12 @@ fn both_formats_escape_text_to_prevent_extra_log_lines() {
             let record = &output.records()[0];
             assert_eq!(record["tag"], tag);
             assert_eq!(record["msg"], message);
+            assert_eq!(record["actor"], "actor\nforged\r\"");
             assert_eq!(record["meta"]["detail\nkey"], "line\nbreak\r\t\"");
         } else {
             assert!(text.contains("msg=\"hello\\nworld\\r\\t\\\"\\\\\""));
             assert!(text.contains("tag=\"test\\nforged\\r\\\"\""));
+            assert!(text.contains("actor=\"actor\\nforged\\r\\\"\""));
         }
     }
 }
@@ -232,10 +287,11 @@ fn write_and_flush_failures_are_silent_and_filtered_calls_do_not_write() {
             Format::Json,
             Level::Error,
         );
-        logger.debug("test", "filtered", None);
+        let context = AppContext::default();
+        logger.debug(&context, "test", "filtered", None);
         assert_eq!(*calls.lock().unwrap(), (0, 0));
 
-        logger.error("test", "emitted", None);
+        logger.error(&context, "test", "emitted", None);
         assert_eq!(*calls.lock().unwrap(), (1, usize::from(fail_on_flush)));
     }
 }
@@ -249,12 +305,13 @@ fn concurrent_calls_produce_complete_independent_records() {
         .map(|worker| {
             let logger = Arc::clone(&logger);
             thread::spawn(move || {
+                let context = context();
                 for item in 0..25 {
                     let meta = Meta::from([
                         ("worker".into(), MetaValue::Integer(worker)),
                         ("item".into(), MetaValue::Integer(item)),
                     ]);
-                    logger.info("test/concurrent", "record", Some(&meta));
+                    logger.info(&context, "test/concurrent", "record", Some(&meta));
                 }
             })
         })

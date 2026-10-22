@@ -7,10 +7,12 @@ data reference; database preparation remains in `master_database`.
 Read the [root guide](../AGENTS.md) first. This is an independent Rust 2024 crate
 with a binary entrypoint and a library exposing domain and infrastructure modules.
 Generic domain errors, logger models, the logger utility contract, and its
-writer adapter are implemented. JSON formatting uses `serde_json` only in
-infrastructure. `src/main.rs` remains a
-placeholder. The rest of the layout below is the target architecture, not an
-implemented master-data runtime.
+writer adapter are implemented. Entity models, repository contracts, and app
+context/config models for topics, polling methods, provinces, and cities are
+implemented. `shared/crates/pgdt` is available for future infrastructure but
+is not yet a dependency. JSON formatting uses `serde_json` only in infrastructure.
+`src/main.rs` remains a placeholder. The remaining modules below are the target
+architecture, not an implemented master-data runtime.
 
 ## Target source layout
 
@@ -69,19 +71,22 @@ and fan-out belong to `broadcast_service`. Do not import another service's inter
 modules. Expose explicit domain types at boundaries and coordinate future external
 contracts with consumers. Do not add authentication, routes, write permissions,
 cache behavior, or publication guarantees by analogy; those are feature decisions.
-The PostgreSQL/PostGIS schema exists, but this scaffold selects no runtime database
-driver, HTTP framework, broker, or async runtime.
+The PostgreSQL/PostGIS schema exists; `AppEnv` models logger and PostgreSQL
+settings, but this scaffold does not yet construct a pool or select a runtime
+database driver, HTTP framework, broker, or async runtime.
 
 ## Style and verification
 
-The logger contract exposes error/warn/info/debug calls with a tag, message, and
-optional borrowed metadata. `WriterLogger::new(writer, format, level)` injects a
-`Write + Send` output, plain/JSON format, and maximum verbosity. `NONE` disables
-all records. The adapter emits and flushes one line per call, including
-`time_unix_ms`, `level`, `msg`, `tag`, and `meta`; absent metadata becomes `{}`.
-Writes are synchronous and can block. Logger methods return `()` and silently
-ignore emission failures without retries or recursive logging.
-No process-global logger, environment loading, or tracer integration is installed.
+The logger contract exposes error/warn/info/debug calls with `&AppContext` first,
+then a tag, message, and optional borrowed metadata. `WriterLogger::new(writer,
+format, level)` injects a `Write + Send` output, plain/JSON format, and maximum
+verbosity. `NONE` disables all records. The adapter emits and flushes one line per
+call, including `time_unix_ms`, `level`, `tag`, `msg`, `actor`, `execution_id`,
+`trace_id`, and `meta`; absent context values become empty strings and absent
+metadata becomes `{}`. Writes are synchronous and can block. Logger methods return
+`()` and silently ignore emission failures without retries or recursive logging.
+No process-global logger or environment loading is installed; callers supply
+correlation identifiers through `AppContext`.
 
 Follow the root Rust conventions, constructor injection, narrow visibility, and
 classified errors. Use one focused capability per module, explicit request/result

@@ -12,9 +12,11 @@ names, explicit entity/filter scope, and `Result` for failures. Expose domain
 values rather than drivers, sockets, SDK errors, or framework contexts.
 
 Introduce master-data persistence and external lookup capabilities only when a
-feature needs them. Keep commit boundaries explicit behind domain contracts,
-without exposing native transaction types. Do not add a transaction abstraction,
-publication contract, or distributed consistency guarantee just for symmetry.
+feature needs them. Every repository method takes `&AppContext` first, then the
+explicit entity/filter scope. Adapters must route execution through the context's
+opaque transaction handle without exposing native transaction types to callers.
+Do not add a transaction abstraction, publication contract, or distributed
+consistency guarantee just for symmetry.
 
 ## Compatibility and tests
 
@@ -28,9 +30,9 @@ rather than the chosen adapter library.
 ## Logger contract
 
 `utility/logger.rs` defines the object-safe `Logger: Send + Sync` trait. The core
-`log` method accepts a domain level, tag, message, and optional borrowed metadata;
-error/warn/info/debug methods delegate to it. All calls return `()`; emission
-failures are silently ignored. Filtered calls produce no output. Metadata must not be mutated; absent metadata is an empty object. Unlike
-Lockmate's Go contract, no context/tracer parameter is introduced before a tracing
-capability exists. Infrastructure supplies the implementation; application can
-inject `&dyn Logger` or `Arc<dyn Logger>` as its ownership needs dictate.
+`log` method accepts `&AppContext` first, then a domain level, tag, message, and
+optional borrowed metadata; error/warn/info/debug methods delegate to it. All
+calls return `()`; emission failures are silently ignored. Filtered calls produce
+no output. Metadata must not be mutated; absent metadata is an empty object.
+Infrastructure supplies the implementation; application can inject `&dyn Logger`
+or `Arc<dyn Logger>` as its ownership needs dictate.

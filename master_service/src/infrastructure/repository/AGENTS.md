@@ -12,7 +12,7 @@ conversion (for example `adapter.rs`). Keep constructors explicit and fields
 private. Bind values rather than interpolating input; adapter-owned identifiers
 and ordering must not come from unchecked user strings.
 
-Map persistence rows into domain values explicitly. Preserve master-data filters, pagination, and soft-deletion
+Map persistence rows into domain values explicitly. Preserve master-data filters, pagination, and deletion
 predicates throughout scoped operations. Translate native failures into domain
 classifications while retaining useful diagnostic causes. Do not log SQL values,
 raw payloads, or connection strings, and do not add business validation or service orchestration.

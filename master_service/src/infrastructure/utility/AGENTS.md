@@ -28,7 +28,9 @@ resource cleanup, and the adapter's stated delivery behavior with isolated fixtu
 injected `Write + Send`, format, and maximum verbosity. `logger/normalize.rs`
 maps domain metadata into JSON values without mutating the caller. Nonfinite
 floats normalize to null. Plain output quotes/escapes text; JSON output preserves
-structured metadata. Both formats use one physical line per record.
+structured metadata. Both formats use one physical line per record and include
+the context actor, execution ID, and trace ID; absent context values render as
+empty strings.
 
 Filtering precedes serialization and writer access, including `NONE`. Serialize
 before locking; hold the writer mutex across the complete write and flush to
