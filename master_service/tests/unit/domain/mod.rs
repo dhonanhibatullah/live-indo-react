@@ -1,3 +1,4 @@
+mod app_context_contracts;
 mod app_models;
 mod cache_contract;
 mod category_errors;

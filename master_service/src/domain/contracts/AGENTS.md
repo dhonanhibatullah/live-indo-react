@@ -53,6 +53,13 @@ configured TTL. Cache operations are best effort and have no domain error type.
 Keys are caller-scoped and must keep individual reads and list queries distinct.
 Callers must not cache data from an active transaction.
 
+## App context contract
+
+`utility/app_context.rs` defines the object-safe `AppContextFactory: Send + Sync`
+trait. `create` receives the optional opaque actor and optional trace UUID and
+returns an `AppContext`. Implementations generate a service-local execution ID
+and leave `transaction` unset. The actor is never authentication or authorization.
+
 ## Logger contract
 
 `utility/logger.rs` defines the object-safe `Logger: Send + Sync` trait. The core

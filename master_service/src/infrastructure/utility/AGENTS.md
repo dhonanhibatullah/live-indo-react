@@ -22,6 +22,14 @@ payloads or connection strings. Close connections and join owned background task
 on shutdown. Test conversion, timeout/cancellation, unavailable dependencies,
 resource cleanup, and the adapter's stated delivery behavior with isolated fixtures.
 
+## App context adapter
+
+`app_context.rs` implements `AppContextFactory` through
+`UuidAppContextFactory::new()`. It preserves the supplied actor and trace UUID,
+generates a fresh non-nil service-local execution UUID, and leaves the transaction
+unset. No global state or authentication behavior is introduced. Behavior tests
+live in `tests/unit/infrastructure/app_context.rs`.
+
 ## Logger adapter
 
 `logger/writer.rs` implements the domain logger through `WriterLogger<W>` with

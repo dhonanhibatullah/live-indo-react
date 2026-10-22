@@ -23,6 +23,8 @@ helpers live in `shared/log.rs`.
 - `geographic/` maps repository reads to province/city results, coordinate
   resolution, and national-boundary checks.
 - `topic/` maps public catalog reads and applies active/nondeleted filters.
+- `misc/` creates request context from transport actor/trace values and delegates
+  execution-ID generation to the injected context factory.
 
 Application failures aggregate domain validation and repository classifications
 through `UsecaseError`; preserve their codes and sources rather than flattening

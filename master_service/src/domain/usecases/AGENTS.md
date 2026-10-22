@@ -12,6 +12,9 @@ presentation depends on them rather than concrete implementations.
 - `geographic/` retrieves provinces and cities, resolves a coordinate to a
   province plus optional city, and checks the national boundary.
 - `topic/` exposes the available polling-method catalog and active topic reads.
+- `misc/` exposes presentation-facing request context creation. `CreateAppContext`
+  receives actor and trace values; the application implementation supplies the
+  service-local execution ID.
 
 Use `shared/future.rs` for the object-safe `UsecaseFuture` and `shared/page.rs`
 for offset pagination. Request types are explicit per capability; do not expose

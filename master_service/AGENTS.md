@@ -15,7 +15,9 @@ are implemented. Repository contracts return object-safe boxed `RepositoryFuture
 values. Province and city coordinate lookups and the national-boundary
 repository contract, PostgreSQL adapter, and cached decorator are implemented.
 Domain usecase contracts and application implementations are grouped under
-management, geographic, and topic capabilities.
+management, geographic, topic, and misc capabilities. The misc context usecase
+accepts actor/trace metadata and delegates execution-ID generation to the utility
+factory.
 PostgreSQL/PostGIS repository adapters for all four master entities use
 `shared/crates/pgdt` and SQLx, including the `AppContext` transaction bridge.
 Validator field-format, nonblank, selection-option, and city/province-code rules
