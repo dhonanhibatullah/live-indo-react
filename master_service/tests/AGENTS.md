@@ -21,7 +21,7 @@ tests/
     main.rs
     domain/
     infrastructure/
-    application/          # when unit tests for usecases exist
+    application/          # usecase tests with fake contracts
     presentation/         # when unit tests for transport mapping exist
   integration/
     main.rs
@@ -43,7 +43,7 @@ them as a separate test crate, so they cannot access `pub(crate)` items.
 - `unit/domain/`: pure model, error-code, value-invariant, and contract tests.
 - `unit/infrastructure/`: adapters and cached repository decorators tested with
   in-memory fakes.
-- `unit/application/`: future usecase tests using fake domain contracts.
+- `unit/application/`: usecase behavior using fake domain contracts and validators.
 - `unit/presentation/`: future DTO, mapping, and safe-error tests.
 
 Unit tests must not connect to a database, open sockets, start processes, mutate

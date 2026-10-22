@@ -76,7 +76,8 @@ returned as domain errors.
 stable codes such as `TOPIC_SLUG_INVALID` and `CITY_PROVINCE_CODE_MISMATCH`.
 `RepositoryError` has generic operation buckets plus entity-specific not-found,
 conflict, and relation failures such as `TOPIC_SLUG_CONFLICT` and
-`CITY_PROVINCE_NOT_FOUND`. Only `Timeout` and `Failure` retain a native source;
+`CITY_PROVINCE_NOT_FOUND`. `UsecaseError` aggregates validation and repository
+failures without losing their classifications. Only `Timeout` and `Failure` retain a native source;
 classification variants have none. Both enums expose `code()`; Display remains
 diagnostic. Add variants only for rules or failures the feature actually defines;
 do not invent lengths, formats, aggregation formulas, or permissions to fill an

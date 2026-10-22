@@ -5,3 +5,4 @@ mod domain_error;
 mod entity_models;
 mod logger_models;
 mod repository_contracts;
+mod usecase_contracts;

@@ -1,6 +1,6 @@
 use std::{error::Error as StdError, io};
 
-use master_service::domain::models::error::{RepositoryError, ValidatorError};
+use master_service::domain::models::error::{RepositoryError, UsecaseError, ValidatorError};
 
 #[test]
 fn validator_codes_are_stable() {
@@ -141,6 +141,19 @@ fn repository_specific_codes_are_stable() {
     ] {
         assert_eq!(error.code(), code);
     }
+}
+
+#[test]
+fn usecase_errors_preserve_nested_classification_and_source() {
+    let validation = UsecaseError::from(ValidatorError::TopicSlugInvalid);
+    assert_eq!(validation.code(), "TOPIC_SLUG_INVALID");
+    assert_eq!(validation.to_string(), "topic slug is invalid");
+    assert!(validation.source().is_some());
+
+    let repository = UsecaseError::from(RepositoryError::TopicNotFound);
+    assert_eq!(repository.code(), "TOPIC_NOT_FOUND");
+    assert_eq!(repository.to_string(), "topic was not found");
+    assert!(repository.source().is_some());
 }
 
 #[test]

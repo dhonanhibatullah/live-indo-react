@@ -14,6 +14,8 @@ and app context/config models for topics, polling methods, provinces, and cities
 are implemented. Repository contracts return object-safe boxed `RepositoryFuture`
 values. Province and city coordinate lookups and the national-boundary
 repository contract, PostgreSQL adapter, and cached decorator are implemented.
+Domain usecase contracts and application implementations are grouped under
+management, geographic, and topic capabilities.
 PostgreSQL/PostGIS repository adapters for all four master entities use
 `shared/crates/pgdt` and SQLx, including the `AppContext` transaction bridge.
 Validator field-format, nonblank, selection-option, and city/province-code rules
@@ -69,8 +71,9 @@ to a service without an actual persistence requirement.
 
 Presentation maps transport input to domain usecase requests. Application owns
 business validation and calls injected domain contracts. Infrastructure implements
-those contracts against selected drivers or providers. Master-data runtime
-operations are not implemented by this scaffold.
+those contracts against selected drivers or providers. Usecase implementations are
+available, but HTTP routes and composition wiring are not implemented by this
+scaffold.
 
 The master schema lives in [master_database/docs/erd.dbml](../master_database/docs/erd.dbml).
 The validator preserves stable topic slugs and regional/method code formats and
