@@ -13,7 +13,9 @@ the explicit clean architecture and distributed guidance of `../mate/lockmate` t
 Rust; the sibling checkout is a design reference, not a runtime dependency.
 
 The three backend services are Rust 2024 crates with implemented generic domain errors,
-logger models, logger utility contracts, and writer adapters. `master_service` also has
+logger models, logger utility contracts, and writer adapters. `reaction_service`
+also has app context, opaque transaction, app identity and environment models; its
+logger contract and adapter accept app context first. `master_service` also has
 master-data entity models, object-safe repository contracts and PostgreSQL adapters,
 cached repository decorators, a Moka in-memory cache contract and adapter, a validator
 contract and regex adapter, grouped management/geographic/topic usecases,

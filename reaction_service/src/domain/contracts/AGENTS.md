@@ -28,9 +28,13 @@ rather than the chosen adapter library.
 ## Logger contract
 
 `utility/logger.rs` defines the object-safe `Logger: Send + Sync` trait. The core
-`log` method accepts a domain level, tag, message, and optional borrowed metadata;
+`log` method accepts `&AppContext` first, then a domain level, tag, message, and
+optional borrowed metadata;
 error/warn/info/debug methods delegate to it. All calls return `()`; emission
-failures are silently ignored. Filtered calls produce no output. Metadata must not be mutated; absent metadata is an empty object. Unlike
-Lockmate's Go contract, no context/tracer parameter is introduced before a tracing
-capability exists. Infrastructure supplies the implementation; application can
+failures are silently ignored. Filtered calls produce no output. Context and
+metadata are borrowed and must not be mutated or retained. The writer emits the
+context actor, execution ID and trace ID; absent values become empty strings.
+Never serialize transaction contents into a log record. This adds correlation
+metadata without installing a tracer or context factory.
+Infrastructure supplies the implementation; application can
 inject `&dyn Logger` or `Arc<dyn Logger>` as its ownership needs dictate.

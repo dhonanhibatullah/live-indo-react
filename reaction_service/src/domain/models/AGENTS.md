@@ -16,6 +16,24 @@ adapters. Keep model dependencies minimal and independent of concrete I/O librar
 Use typed error variants with useful causes; preserve the distinction between
 invalid values, missing records where applicable, and operational failure.
 
+## App models
+
+`app/` follows the master-service layout: `context.rs`, `transaction.rs`, `info.rs`,
+and `env.rs`, re-exported through `models`. `AppContext` carries optional opaque
+actor, UUID trace/execution IDs and an optional `AppTransaction`. Actor is caller
+metadata, never proof of authentication or permission. Models do not generate IDs.
+
+`AppTransaction` wraps an opaque `Arc<dyn Any + Send + Sync>` owned by a future
+adapter. Clones share the handle; equality compares handle identity, not contents.
+Its Debug output omits contents. This is vocabulary only, with no transaction
+runner or database implementation introduced here.
+
+`AppInfo` contains static name/version strings; Cargo metadata loading is separate.
+`AppEnv` contains typed logger and PostgreSQL settings, including pool size and
+connection timeout. Do not derive Debug on credential-bearing settings. Loading,
+defaults, validation and additional runtime settings remain deferred. Context and
+settings types must not introduce transport or driver dependencies.
+
 ## Service responsibility
 
 Represent anonymous reaction/comment data and its province/topic scope. Do not add

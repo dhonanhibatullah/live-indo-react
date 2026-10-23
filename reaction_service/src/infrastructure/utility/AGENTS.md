@@ -31,6 +31,12 @@ maps domain metadata into JSON values without mutating the caller. Nonfinite
 floats normalize to null. Plain output quotes/escapes text; JSON output preserves
 structured metadata. Both formats use one physical line per record.
 
+Logger calls take `&AppContext` first. Emit `actor`, `execution_id` and `trace_id`
+as top-level fields alongside existing fields in both formats. Missing values are
+empty strings. Escape the actor in plain output to prevent injected log lines;
+keep metadata nested so it cannot override context fields. Never log transaction
+contents or mutate the caller's context. No automatic ID generation is installed.
+
 Filtering precedes serialization and writer access, including `NONE`. Serialize
 before locking; hold the writer mutex across the complete write and flush to
 avoid interleaving concurrent calls. Silently discard serialization, write, flush,

@@ -7,7 +7,10 @@ use std::{
 use reaction_service::{
     domain::{
         contracts::utility::logger::Logger,
-        models::logger::{Format, Level, Meta, MetaValue},
+        models::{
+            AppContext, AppTransaction,
+            logger::{Format, Level, Meta, MetaValue},
+        },
     },
     infrastructure::utility::logger::WriterLogger,
 };
@@ -76,11 +79,17 @@ fn every_threshold_filters_all_severity_methods_in_both_formats() {
             let adapter = WriterLogger::new(output.clone(), format, threshold);
             let logger: &dyn Logger = &adapter;
 
-            logger.error("test/error", "failed", None);
-            logger.warn("test/warn", "warning", None);
-            logger.info("test/info", "accepted", None);
-            logger.debug("test/debug", "diagnostic", None);
-            logger.log(Level::None, "test/none", "never emitted", None);
+            logger.error(&AppContext::default(), "test/error", "failed", None);
+            logger.warn(&AppContext::default(), "test/warn", "warning", None);
+            logger.info(&AppContext::default(), "test/info", "accepted", None);
+            logger.debug(&AppContext::default(), "test/debug", "diagnostic", None);
+            logger.log(
+                &AppContext::default(),
+                Level::None,
+                "test/none",
+                "never emitted",
+                None,
+            );
 
             let text = output.text();
             assert_eq!(text.lines().count(), expected, "{format} {threshold}");
@@ -127,7 +136,12 @@ fn json_preserves_metadata_types_and_normalizes_errors_without_mutating_input() 
     let output = Buffer::default();
     let logger = WriterLogger::new(output.clone(), Format::Json, Level::Debug);
 
-    logger.error("delivery/send", "send failed", Some(&meta));
+    logger.error(
+        &AppContext::default(),
+        "delivery/send",
+        "send failed",
+        Some(&meta),
+    );
 
     assert_eq!(meta, original);
     let record = &output.records()[0];
@@ -161,7 +175,12 @@ fn nonfinite_floats_are_null_and_input_remains_unchanged() {
     let output = Buffer::default();
     let logger = WriterLogger::new(output.clone(), Format::Json, Level::Info);
 
-    logger.info("test/float", "normalized", Some(&meta));
+    logger.info(
+        &AppContext::default(),
+        "test/float",
+        "normalized",
+        Some(&meta),
+    );
 
     assert_eq!(
         output.records()[0]["meta"],
@@ -181,7 +200,7 @@ fn both_formats_escape_text_to_prevent_extra_log_lines() {
         let tag = "test\nforged\r\"";
         let message = "hello\nworld\r\t\"\\";
 
-        logger.info(tag, message, Some(&meta));
+        logger.info(&AppContext::default(), tag, message, Some(&meta));
 
         let text = output.text();
         assert_eq!(text.lines().count(), 1);
@@ -232,10 +251,10 @@ fn write_and_flush_failures_are_silent_and_filtered_calls_do_not_write() {
             Format::Json,
             Level::Error,
         );
-        logger.debug("test", "filtered", None);
+        logger.debug(&AppContext::default(), "test", "filtered", None);
         assert_eq!(*calls.lock().unwrap(), (0, 0));
 
-        logger.error("test", "emitted", None);
+        logger.error(&AppContext::default(), "test", "emitted", None);
         assert_eq!(*calls.lock().unwrap(), (1, usize::from(fail_on_flush)));
     }
 }
@@ -254,7 +273,12 @@ fn concurrent_calls_produce_complete_independent_records() {
                         ("worker".into(), MetaValue::Integer(worker)),
                         ("item".into(), MetaValue::Integer(item)),
                     ]);
-                    logger.info("test/concurrent", "record", Some(&meta));
+                    logger.info(
+                        &AppContext::default(),
+                        "test/concurrent",
+                        "record",
+                        Some(&meta),
+                    );
                 }
             })
         })
@@ -276,4 +300,61 @@ fn concurrent_calls_produce_complete_independent_records() {
         })
         .collect();
     assert_eq!(pairs.len(), 200);
+}
+
+#[test]
+fn context_fields_are_escaped_and_transaction_contents_are_not_logged() {
+    let context = AppContext {
+        actor: Some("anonymous\nactor".into()),
+        trace_id: Some(uuid::Uuid::from_u128(1)),
+        execution_id: Some(uuid::Uuid::from_u128(2)),
+        transaction: Some(AppTransaction::new("private-transaction-content")),
+    };
+    let meta = Meta::from([("actor".into(), "metadata-only".into())]);
+    for format in [Format::Plain, Format::Json] {
+        let output = Buffer::default();
+        let logger = WriterLogger::new(output.clone(), format, Level::Info);
+        logger.info(&context, "context", "record", Some(&meta));
+        let text = output.text();
+        assert_eq!(text.lines().count(), 1);
+        assert!(!text.contains("private-transaction-content"));
+        if format == Format::Json {
+            let record = &output.records()[0];
+            assert_eq!(record["actor"], "anonymous\nactor");
+            assert_eq!(record["trace_id"], context.trace_id.unwrap().to_string());
+            assert_eq!(
+                record["execution_id"],
+                context.execution_id.unwrap().to_string()
+            );
+            assert_eq!(record["meta"]["actor"], "metadata-only");
+            assert!(record.get("transaction").is_none());
+        } else {
+            assert!(text.contains("actor=\"anonymous\\nactor\""));
+            assert!(text.contains(&format!("trace_id=\"{}\"", context.trace_id.unwrap())));
+            assert!(text.contains(&format!(
+                "execution_id=\"{}\"",
+                context.execution_id.unwrap()
+            )));
+        }
+    }
+}
+
+#[test]
+fn absent_context_fields_are_empty_strings_in_both_formats() {
+    for format in [Format::Plain, Format::Json] {
+        let output = Buffer::default();
+        let logger = WriterLogger::new(output.clone(), format, Level::Info);
+        logger.info(&AppContext::default(), "context", "record", None);
+        if format == Format::Json {
+            let record = &output.records()[0];
+            for field in ["actor", "trace_id", "execution_id"] {
+                assert_eq!(record[field], "");
+            }
+        } else {
+            let text = output.text();
+            for field in ["actor", "trace_id", "execution_id"] {
+                assert!(text.contains(&format!("{field}=\"\"")));
+            }
+        }
+    }
 }

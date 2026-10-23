@@ -5,8 +5,8 @@ then hand accepted reactions to the broadcast integration.
 
 Read the [root guide](../AGENTS.md) first. This is an independent Rust 2024 crate
 with a binary entrypoint and a library exposing domain and infrastructure modules.
-Generic domain errors, logger models, the logger utility contract, and its
-writer adapter are implemented. JSON formatting uses `serde_json` only in
+App models, generic domain errors, logger models, the context-first logger
+utility contract, and its writer adapter are implemented. JSON formatting uses `serde_json` only in
 infrastructure. `src/main.rs` remains a
 placeholder. The rest of the layout below is the target architecture, not an
 implemented reaction runtime.
@@ -70,11 +70,13 @@ Record such decisions alongside the feature that introduces them.
 
 ## Style and verification
 
-The logger contract exposes error/warn/info/debug calls with a tag, message, and
-optional borrowed metadata. `WriterLogger::new(writer, format, level)` injects a
+The logger contract exposes error/warn/info/debug calls with `&AppContext` first,
+then a tag, message, and optional borrowed metadata. `WriterLogger::new(writer, format, level)` injects a
 `Write + Send` output, plain/JSON format, and maximum verbosity. `NONE` disables
 all records. The adapter emits and flushes one line per call, including
-`time_unix_ms`, `level`, `msg`, `tag`, and `meta`; absent metadata becomes `{}`.
+`time_unix_ms`, `level`, `msg`, `tag`, `actor`, `execution_id`, `trace_id`, and
+`meta`; absent context values become empty strings and absent metadata becomes
+`{}`. The transaction handle is never logged.
 Writes are synchronous and can block. Logger methods return `()` and silently
 ignore emission failures without retries or recursive logging.
 No process-global logger, environment loading, or tracer integration is installed.
