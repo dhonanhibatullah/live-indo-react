@@ -5,7 +5,7 @@ use master_service::domain::{
     },
     usecases::{
         UsecaseFuture,
-        geographic::{GetCity, GetProvince, GetRegionByCoord, IsInsideIndonesia},
+        geographic::{GetCity, GetProvince, GetRegion, IsInsideIndonesia},
         management::{
             ManageCity, ManageIndonesiaBoundary, ManagePollingMethod, ManageProvince, ManageTopic,
         },
@@ -26,7 +26,7 @@ fn usecase_contracts_are_object_safe_and_futures_are_send() {
     fn accept_geographic(
         _: &dyn GetProvince,
         _: &dyn GetCity,
-        _: &dyn GetRegionByCoord,
+        _: &dyn GetRegion,
         _: &dyn IsInsideIndonesia,
     ) {
     }

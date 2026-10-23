@@ -369,12 +369,14 @@ impl ProvinceRepository for FakeProvinceRepository {
 
 pub(crate) struct FakeCityRepository {
     city: Mutex<Option<City>>,
+    pub(crate) last_coord: Mutex<Option<(AppContext, f64, f64)>>,
 }
 
 impl FakeCityRepository {
     pub(crate) fn new(city: Option<City>) -> Self {
         Self {
             city: Mutex::new(city),
+            last_coord: Mutex::new(None),
         }
     }
 }
@@ -401,10 +403,11 @@ impl CityRepository for FakeCityRepository {
     }
     fn find_city_by_coord<'a>(
         &'a self,
-        _: &'a AppContext,
-        _: f64,
-        _: f64,
+        context: &'a AppContext,
+        longitude: f64,
+        latitude: f64,
     ) -> RepositoryFuture<'a, Option<City>> {
+        *self.last_coord.lock().expect("coord lock") = Some((context.clone(), longitude, latitude));
         let city = self.city.lock().expect("city lock").clone();
         Box::pin(async move { Ok(city) })
     }

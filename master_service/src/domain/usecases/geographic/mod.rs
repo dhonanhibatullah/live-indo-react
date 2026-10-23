@@ -6,4 +6,4 @@ pub mod region;
 pub use city::GetCity;
 pub use indonesia::IsInsideIndonesia;
 pub use province::GetProvince;
-pub use region::{GetRegionByCoord, Region};
+pub use region::{GetRegion, Region, RegionByIp};

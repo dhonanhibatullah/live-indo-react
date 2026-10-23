@@ -2,15 +2,13 @@ use std::sync::Arc;
 
 use tonic::service::Routes;
 
-use crate::domain::usecases::geographic::{
-    GetCity, GetProvince, GetRegionByCoord, IsInsideIndonesia,
-};
+use crate::domain::usecases::geographic::{GetCity, GetProvince, GetRegion, IsInsideIndonesia};
 use crate::presentation::grpc::server::geographic::{city, indonesia, province, region};
 
 pub struct GeographicDependencies {
     pub provinces: Arc<dyn GetProvince>,
     pub cities: Arc<dyn GetCity>,
-    pub regions: Arc<dyn GetRegionByCoord>,
+    pub regions: Arc<dyn GetRegion>,
     pub indonesia: Arc<dyn IsInsideIndonesia>,
 }
 

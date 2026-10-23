@@ -10,7 +10,8 @@ presentation depends on them rather than concrete implementations.
   explicit create/update/delete requests; polling methods are seed-created and
   support update/delete; the singleton national boundary supports update only.
 - `geographic/` retrieves provinces and cities, resolves a coordinate to a
-  province plus optional city, and checks the national boundary.
+  province plus optional city, resolves estimated IP locations, and checks the
+  national boundary.
 - `topic/` exposes the available polling-method catalog and active topic reads.
 - `misc/` exposes presentation-facing request context creation. `CreateAppContext`
   receives actor and trace values; the application implementation supplies the
@@ -40,3 +41,14 @@ Keep business validation in application and document the intended outcomes on
 interfaces. Exercise implementations through these interfaces with test doubles
 for external capabilities, covering invalid scope and dependency failures. Changing
 an interface requires updating its callers, implementation, and tests together.
+
+## Region lookup
+
+`geographic/region.rs` exposes the object-safe `GetRegion` trait with
+`get_region_by_coord` and `get_region_by_ip`. Coordinate lookup returns
+`Option<Region>`; a region contains a required province and optional city.
+IP lookup takes `IpAddr` and returns `RegionByIp` with an optional GeoIP estimate
+and optional matched region. Missing provider records yield both absent; missing
+coordinates or boundary matches preserve the estimate with no region. Do not map
+provider names/codes directly to Kemendagri codes, substitute zero coordinates,
+or enforce country admission here. GeoIP failures propagate through UsecaseError.

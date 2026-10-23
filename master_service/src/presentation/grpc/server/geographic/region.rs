@@ -6,18 +6,18 @@ use live_indo_proto::live_indo_react::master::v1::{
 };
 use tonic::{Request, Response, Status};
 
-use crate::domain::usecases::geographic::GetRegionByCoord;
+use crate::domain::usecases::geographic::GetRegion;
 use crate::presentation::grpc::{
     mapper::{entity, error},
     server::shared::app_context,
 };
 
 pub struct RegionServer {
-    usecase: Arc<dyn GetRegionByCoord>,
+    usecase: Arc<dyn GetRegion>,
 }
 
 impl RegionServer {
-    pub fn new(usecase: Arc<dyn GetRegionByCoord>) -> Self {
+    pub fn new(usecase: Arc<dyn GetRegion>) -> Self {
         Self { usecase }
     }
 }
@@ -41,8 +41,6 @@ impl GeographicRegionService for RegionServer {
     }
 }
 
-pub(crate) fn server(
-    usecase: Arc<dyn GetRegionByCoord>,
-) -> GeographicRegionServiceServer<RegionServer> {
+pub(crate) fn server(usecase: Arc<dyn GetRegion>) -> GeographicRegionServiceServer<RegionServer> {
     GeographicRegionServiceServer::new(RegionServer::new(usecase))
 }

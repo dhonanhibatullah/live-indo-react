@@ -11,7 +11,7 @@ use master_service::{
         models::{AppContext, RepositoryError, entity::Topic},
         usecases::{
             UsecaseFuture,
-            geographic::{GetCity, GetProvince, GetRegionByCoord, IsInsideIndonesia, Region},
+            geographic::{GetCity, GetProvince, GetRegion, IsInsideIndonesia, Region},
             management::{
                 city::{CreateCity, ManageCity, UpdateCity},
                 indonesia_boundary::{ManageIndonesiaBoundary, UpdateIndonesiaBoundary},
@@ -166,7 +166,15 @@ impl GetCity for FakeUsecases {
     }
 }
 
-impl GetRegionByCoord for FakeUsecases {
+impl GetRegion for FakeUsecases {
+    fn get_region_by_ip<'a>(
+        &'a self,
+        _: &'a AppContext,
+        _: std::net::IpAddr,
+    ) -> UsecaseFuture<'a, master_service::domain::usecases::geographic::RegionByIp> {
+        unavailable()
+    }
+
     fn get_region_by_coord<'a>(
         &'a self,
         _: &'a AppContext,

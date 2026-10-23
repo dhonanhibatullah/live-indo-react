@@ -21,12 +21,12 @@ helpers live in `shared/log.rs`.
   city, and national-boundary writes. It resolves referenced records and maps
   explicit usecase requests to repository arguments.
 - `geographic/` maps repository reads to province/city results, coordinate
-  resolution, and national-boundary checks.
+  resolution, estimated IP-to-region resolution, and national-boundary checks.
 - `topic/` maps public catalog reads and applies active/nondeleted filters.
 - `misc/` creates request context from transport actor/trace values and delegates
   execution-ID generation to the injected context factory.
 
-Application failures aggregate domain validation and repository classifications
+Application failures aggregate domain validation, repository and GeoIP classifications
 through `UsecaseError`; preserve their codes and sources rather than flattening
 them into strings.
 
@@ -59,3 +59,18 @@ Cover invalid master-data values/relationships, not-found/conflict cases,
 dependency failures, and rollback when implemented in `tests/unit/application/`.
 Use fakes for external capabilities; use an isolated database only for adapter
 integration checks.
+
+## IP region resolution
+
+`RegionQueries` implements both operations on `GetRegion`. Inject `GeoIpService`
+using `RegionQueries::new(...).with_geoip(service)` to enable IP lookup. Without
+that explicit dependency, IP calls return GEOIP_NOT_READY and coordinate lookup
+continues to work. Current server composition remains coordinate-only; no
+configuration loading or adapter construction belongs in the application layer.
+
+Get the provider estimate once, then reuse coordinate resolution only if a point
+is present. Retain the estimate when no point/region exists. No GeoIP readiness,
+update, download, name-matching or country-admission logic belongs on this read
+path. Preserve provider error codes and source chains through UsecaseError;
+avoid duplicate adapter failure logs. Log the application-created unconfigured
+GeoIP error once using its code, without the IP.

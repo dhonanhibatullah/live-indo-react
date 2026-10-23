@@ -116,7 +116,11 @@ not download databases or query MMDB by itself. Keep the real file ignored
 and never print its credentials. File-boundary tests use synthetic fixtures.
 
 `GeoIpService` and `HttpsGeoIp` provide local City lookups and explicit HTTPS
-release checks/downloads with validated atomic file replacement. GeoIP values and
+release checks/downloads with validated atomic file replacement. `GetRegion` supports coordinate and IP
+lookup; `RegionQueries::with_geoip` injects the service for the latter. IP results
+retain provider estimates even when no coordinates or canonical region exist.
+The server still constructs RegionQueries without GeoIP, so IP resolution is
+not enabled in current composition. GeoIP values and
 classified errors live in domain; archive/file/MMDB and HTTP handling live under
 `infrastructure/service/geoip/`. This adapter is available for injection but is not
 wired into composition, scheduled in the background, or exposed through an API.

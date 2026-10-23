@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use crate::domain::usecases::{
-    geographic::{GetCity, GetProvince, GetRegionByCoord, IsInsideIndonesia},
+    geographic::{GetCity, GetProvince, GetRegion, IsInsideIndonesia},
     management::{
         ManageCity, ManageIndonesiaBoundary, ManagePollingMethod, ManageProvince, ManageTopic,
     },
@@ -24,7 +24,7 @@ pub struct Dependencies {
     pub manage_indonesia_boundary: Arc<dyn ManageIndonesiaBoundary>,
     pub get_province: Arc<dyn GetProvince>,
     pub get_city: Arc<dyn GetCity>,
-    pub get_region: Arc<dyn GetRegionByCoord>,
+    pub get_region: Arc<dyn GetRegion>,
     pub is_inside_indonesia: Arc<dyn IsInsideIndonesia>,
     pub polling_method_catalog: Arc<dyn PollingMethodCatalog>,
     pub topic_catalog: Arc<dyn TopicCatalog>,

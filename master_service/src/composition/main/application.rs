@@ -15,7 +15,7 @@ use crate::{
     domain::{
         contracts::utility::Logger,
         usecases::{
-            geographic::{GetCity, GetProvince, GetRegionByCoord, IsInsideIndonesia},
+            geographic::{GetCity, GetProvince, GetRegion, IsInsideIndonesia},
             management::{
                 ManageCity, ManageIndonesiaBoundary, ManagePollingMethod, ManageProvince,
                 ManageTopic,
@@ -35,7 +35,7 @@ pub struct Application {
     pub manage_indonesia_boundary: Arc<dyn ManageIndonesiaBoundary>,
     pub get_province: Arc<dyn GetProvince>,
     pub get_city: Arc<dyn GetCity>,
-    pub get_region: Arc<dyn GetRegionByCoord>,
+    pub get_region: Arc<dyn GetRegion>,
     pub is_inside_indonesia: Arc<dyn IsInsideIndonesia>,
     pub polling_method_catalog: Arc<dyn PollingMethodCatalog>,
     pub topic_catalog: Arc<dyn TopicCatalog>,
@@ -83,7 +83,7 @@ pub fn build(infrastructure: Infrastructure, logger: Arc<dyn Logger>) -> Applica
         infrastructure.cities.clone(),
         logger.clone(),
     ));
-    let get_region: Arc<dyn GetRegionByCoord> = Arc::new(RegionQueries::new(
+    let get_region: Arc<dyn GetRegion> = Arc::new(RegionQueries::new(
         infrastructure.cities.clone(),
         infrastructure.provinces.clone(),
         logger.clone(),
