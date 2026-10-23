@@ -61,8 +61,13 @@ source files with `#[path]` merely to move those tests into `tests/unit/`.
 `tests/integration/` verifies real boundary behavior. Group tests by the outermost
 boundary being exercised:
 
+- `config.rs`: GeoIP.conf loading with synthetic temporary files, invalid encoding
+  and missing-file error/source behavior. Never read real account credentials.
 - `infrastructure/repository/`: PostgreSQL/PostGIS repository behavior, including
   coordinate and national-boundary containment.
+- `infrastructure/service/`: GeoIP downloads/release checks through a local HTTPS
+  server, real MMDB lookups using dummy test databases, atomic replacement,
+  failure preservation, cancellation and per-instance update serialization.
 - `presentation/`: tonic/Axum transport and wire-contract behavior.
 - `composition/`: startup dependency wiring and bounded shutdown behavior. The
   launcher's signal-free listener test stays inline because it exercises private
@@ -72,7 +77,10 @@ Do not add integration tests for application usecases; application behavior uses
 fakes in `unit/application/`. Domain values do not need external integration
 tests.
 
-Reusable fixtures belong under `support/` and must contain no `#[test]` functions.
+Reusable fixture helpers belong under `support/` and must contain no `#[test]`
+functions. Licensed dummy MMDB data lives in `tests/fixtures/geoip/`; GeoIP tests
+never contact MaxMind or read real credentials. Test HTTPS uses an ephemeral local
+certificate trusted only by the injected client.
 Keep support APIs `pub(crate)` and as narrow as possible. Repository integration
 tests require `MASTER_DATABASE_TEST_DATABASE_URL` for a PostgreSQL/PostGIS server
 whose role can create databases and extensions. Each test must:

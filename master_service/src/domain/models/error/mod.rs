@@ -1,4 +1,5 @@
 mod generic;
+mod geoip;
 mod repository;
 mod usecase;
 mod validator;
@@ -6,6 +7,7 @@ mod validator;
 use std::{error::Error as StdError, fmt};
 
 pub use generic::ErrorKind;
+pub use geoip::GeoIpError;
 pub use repository::RepositoryError;
 pub use usecase::UsecaseError;
 pub use validator::ValidatorError;

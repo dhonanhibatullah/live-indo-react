@@ -54,6 +54,25 @@ Environment parsing, default selection, setting validation, pool construction,
 and cache construction belong to configuration/composition,
 not this model layer.
 
+`GeoIpConf` in `app/geoip_conf.rs` holds a numeric MaxMind account ID, license
+key and ordered database edition identifiers. It has no Debug implementation
+because it contains credentials. Parsing and file access live in
+`config/geoip_conf.rs`; the service adapter consumes this model explicitly.
+
+## GeoIP location
+
+`entity/geoip.rs` defines `GeoIp`, optional country/continent/city/postal/time-zone
+values, ordered provider subdivisions, optional estimated WGS84 coordinates and
+accuracy radius. Missing coordinates/fields remain absent, not zero/empty values.
+Provider region codes are not Kemendagri codes. Use the located country rather
+than an ISP registration country for this location vocabulary. Location and point
+Debug output omit location values. Do not add transport or MMDB types here.
+
+`GeoIpError` owns stable GEOIP_* codes for readiness, invalid configuration,
+invalid database/download, unavailable upstream, timeout and operational failure.
+Operational variants preserve native causes while Display/Debug stay safe; never
+log raw causes containing provider data or signed download URLs.
+
 ## Error model
 
 `error/` exposes the generic `Error` and `ErrorKind` pair plus the

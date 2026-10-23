@@ -6,7 +6,8 @@ guide](../../../AGENTS.md); implementations belong in infrastructure.
 ## Layout and declarations
 
 Group persistence traits under `repository/`, the master-data cache contract under
-`caching/`, and other external technical capabilities under `utility/`. Use one
+`caching/`, external service integrations under `service/`, and other technical
+capabilities under `utility/`. Use one
 focused module per capability. Declare the trait before related argument and result
 structs. Use meaningful Rust names, explicit entity/filter scope, and `Result` for
 failures. Expose domain values rather than drivers, sockets, SDK errors, or
@@ -81,3 +82,17 @@ slug/name, province code/name/boundary source, and city code/name/boundary sourc
 Implementations must not mutate inputs, retain caller data, or perform I/O.
 Failures are classified with stable domain codes; logging is best effort and
 never changes the result. Boundary topology is outside this contract.
+
+## GeoIP service contract
+
+`service/geoip.rs` defines object-safe `GeoIpService: Send + Sync` with boxed Send
+`GeoIpFuture` results classified by `GeoIpError`. All four operations take
+`&AppContext` first: is_ready checks loaded local database status, check_for_update
+returns whether a new/initial release is needed, update conditionally downloads
+and atomically replaces/reloads the database, and get_location maps IpAddr to an
+optional GeoIp. No record is an ordinary None, while no reader is NotReady.
+Provider check failures must not become a false "already current" result.
+Failed updates preserve the current reader. A started atomic installation may
+complete after cancellation; per-instance serialization lasts until it completes.
+No request transaction, country admission policy or scheduler is part of this
+contract. Error codes and native causes are covered by domain tests.

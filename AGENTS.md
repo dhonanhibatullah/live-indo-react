@@ -20,7 +20,9 @@ master-data entity models, object-safe repository contracts and PostgreSQL adapt
 cached repository decorators, a Moka in-memory cache contract and adapter, a validator
 contract and regex adapter, grouped management/geographic/topic usecases,
 application implementations, gRPC plus Axum HTTP presentation adapters, typed
-environment loading, and composition/runtime lifecycle wiring.
+environment loading, and composition/runtime lifecycle wiring. Master-service
+GeoIP domain models/contracts and an HTTPS download/local MMDB adapter also exist;
+GeoIP scheduling, startup wiring and transport exposure remain deferred.
 `shared/` is a separate Rust workspace for explicitly shared libraries; its `pgdt`
 crate provides context-aware PostgreSQL execution and transaction orchestration
 for the master repository adapters. `shared/proto/` contains the master-service

@@ -38,6 +38,7 @@ src/
   config/
     app.rs                      # compile-time service metadata
     env.rs                      # typed environment and .env loading
+    geoip_conf.rs               # explicit GeoIP.conf credential/edition loading
   domain/
     models/                     # domain vocabulary and classified errors
     contracts/                  # repository, caching, and utility traits
@@ -70,6 +71,7 @@ to a service without an actual persistence requirement.
 - Infrastructure: [caching](src/infrastructure/caching/AGENTS.md),
   [repositories](src/infrastructure/repository/AGENTS.md),
   [utilities](src/infrastructure/utility/AGENTS.md).
+- [External service infrastructure](src/infrastructure/service/AGENTS.md).
 - [Presentation](src/presentation/AGENTS.md).
 - [Composition](src/composition/AGENTS.md).
 - [Tests](tests/AGENTS.md).
@@ -103,6 +105,23 @@ cache, transport, and shutdown settings; composition constructs the pool, Moka
 cache, and both servers. No message broker is selected. `master_database` seeds the
 `indonesia_boundary` singleton from a simplified Marine Regions EEZ/land union with
 CC BY 4.0 attribution.
+
+`config::geoip_conf::load()` reads a required `GeoIP.conf` from the working
+directory; `load_from_path()` supports an explicit path. It returns `GeoIpConf`
+with account ID, license key and ordered edition IDs. It accepts the three
+required MaxMind directives, blank lines and full-line comments, and rejects
+unknown/duplicate directives or malformed values without echoing source lines.
+This loader is separate from `.env` and is not wired into startup yet; it does
+not download databases or query MMDB by itself. Keep the real file ignored
+and never print its credentials. File-boundary tests use synthetic fixtures.
+
+`GeoIpService` and `HttpsGeoIp` provide local City lookups and explicit HTTPS
+release checks/downloads with validated atomic file replacement. GeoIP values and
+classified errors live in domain; archive/file/MMDB and HTTP handling live under
+`infrastructure/service/geoip/`. This adapter is available for injection but is not
+wired into composition, scheduled in the background, or exposed through an API.
+See the [adapter guide](src/infrastructure/service/AGENTS.md) for construction,
+size/concurrency limits, cancellation and single-writer assumptions.
 
 ## Style and verification
 

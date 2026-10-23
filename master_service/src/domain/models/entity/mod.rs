@@ -11,3 +11,6 @@ pub use indonesia_boundary::IndonesiaBoundary;
 pub use polling_method::PollingMethod;
 pub use province::Province;
 pub use topic::Topic;
+
+pub mod geoip;
+pub use geoip::{GeoIp, GeoIpCoordinates, GeoIpSubdivision};

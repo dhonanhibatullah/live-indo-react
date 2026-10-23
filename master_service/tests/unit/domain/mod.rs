@@ -4,6 +4,7 @@ mod cache_contract;
 mod category_errors;
 mod domain_error;
 mod entity_models;
+mod geoip;
 mod logger_models;
 mod repository_contracts;
 mod usecase_contracts;
