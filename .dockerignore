@@ -4,3 +4,7 @@
 **/.env.*
 !**/.env.example
 **/*.log
+
+# GeoIP credentials and downloaded production data are supplied at runtime.
+**/GeoIP.conf
+master_service/data/

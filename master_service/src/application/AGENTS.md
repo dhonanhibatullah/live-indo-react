@@ -17,6 +17,8 @@ helpers live in `shared/log.rs`.
 
 ## Capability groups
 
+- `maintenance/` implements operational upkeep with injected service contracts.
+  `GeoIpMaintenance` refreshes the local dataset when unready or outdated.
 - `management/` validates and executes strict topic, polling-method, province,
   city, and national-boundary writes. It resolves referenced records and maps
   explicit usecase requests to repository arguments.
@@ -65,8 +67,9 @@ integration checks.
 `RegionQueries` implements both operations on `GetRegion`. Inject `GeoIpService`
 using `RegionQueries::new(...).with_geoip(service)` to enable IP lookup. Without
 that explicit dependency, IP calls return GEOIP_NOT_READY and coordinate lookup
-continues to work. Current server composition remains coordinate-only; no
-configuration loading or adapter construction belongs in the application layer.
+continues to work. Server composition now injects a shared GeoIP service into
+region resolution and maintenance; configuration loading and adapter construction
+stay in composition.
 
 Get the provider estimate once, then reuse coordinate resolution only if a point
 is present. Retain the estimate when no point/region exists. No GeoIP readiness,
@@ -74,3 +77,20 @@ update, download, name-matching or country-admission logic belongs on this read
 path. Preserve provider error codes and source chains through UsecaseError;
 avoid duplicate adapter failure logs. Log the application-created unconfigured
 GeoIP error once using its code, without the IP.
+
+## GeoIP maintenance
+
+`maintenance/geoip/` follows the grouped `mod.rs` and `usecase.rs` layout.
+`GeoIpMaintenance::new(geoip, logger)` receives `Arc<dyn GeoIpService>` and
+`Arc<dyn Logger>` and implements `RefreshGeoIp` using those domain contracts. Forward the same context to readiness, release check and
+update operations. On unready, update directly and return; otherwise check before
+updating. If the release check says no update is required, emit one INFO record
+tagged `maintenance/geoip/refresh`: "GeoIP refresh skipped: database is current".
+When invoking update, let infrastructure report installation versus a skipped
+replacement; application must not claim a download occurred. Propagate each
+failure immediately through the existing GeoIP usecase error conversion. Do not add duplicate provider logs, a download outcome enum,
+background tasks, retries, configuration loading or adapter construction. Update
+serialization, safe replacement and cancellation behavior remain adapter-owned.
+Cron presentation schedules this usecase daily at 00:00 UTC and emits no extra
+job-level logs. Tests use strict
+in-memory operation scripts in `tests/unit/application/maintenance_geoip.rs`.

@@ -6,6 +6,8 @@ presentation depends on them rather than concrete implementations.
 
 ## Capability groups
 
+- `maintenance/` exposes operational upkeep independently of its trigger.
+  `RefreshGeoIp` ensures the local GeoIP database is ready and current.
 - `management/` contains strict write operations. Topics and regions expose
   explicit create/update/delete requests; polling methods are seed-created and
   support update/delete; the singleton national boundary supports update only.
@@ -52,3 +54,13 @@ and optional matched region. Missing provider records yield both absent; missing
 coordinates or boundary matches preserve the estimate with no region. Do not map
 provider names/codes directly to Kemendagri codes, substitute zero coordinates,
 or enforce country admission here. GeoIP failures propagate through UsecaseError.
+
+## GeoIP maintenance
+
+`maintenance/geoip.rs` defines context-first, object-safe `RefreshGeoIp`, returning
+`UsecaseFuture<()>`. An unready service updates immediately; a ready service first
+checks for a new release and updates only when needed. Both an already-current
+database and a successful refresh return unit; this does not assert a download
+occurred because the adapter rechecks under its update lock. Propagate GeoIP errors
+through UsecaseError, retaining codes and causes. No scheduling, retries or cron
+presentation is part of this interface.

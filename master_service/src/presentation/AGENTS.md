@@ -83,3 +83,14 @@ Use `tests/unit/presentation/grpc/` and `tests/unit/presentation/http/` for
 mapping, metadata, and handler tests. Use
 `tests/integration/presentation/{grpc,http}/` for transport tests with fake
 usecases; no database is needed.
+
+## Cron presentation
+
+Read the scoped [cron guide](cron/AGENTS.md). Cron mirrors handler and registration
+groups with shared job/runner modules. The maintenance GeoIP handler calls
+RefreshGeoIp daily at 00:00 UTC, starting at the next occurrence after startup.
+Composition separately awaits one maintenance refresh before opening listeners.
+Context creation uses the CreateAppContext usecase; no utility contract is called
+from presentation. There are no job-level logs; application/infrastructure own
+operation logs. Composition starts the runner after both listeners bind and owns
+its bounded shutdown alongside HTTP/gRPC.

@@ -44,7 +44,9 @@ them as a separate test crate, so they cannot access `pub(crate)` items.
 - `unit/infrastructure/`: adapters and cached repository decorators tested with
   in-memory fakes.
 - `unit/application/`: usecase behavior using fake domain contracts and validators.
-- `unit/presentation/`: gRPC/HTTP DTO mapping, metadata, and safe-error tests.
+- `unit/presentation/`: gRPC/HTTP DTO mapping, metadata and safe errors, plus
+  cron registration/context/timing/failure/timeout/draining with paused Tokio time.
+  Cron tests inject a wall clock tied to virtual Tokio time and never sleep in real time.
 
 Unit tests must not connect to a database, open sockets, start processes, mutate
 environment variables, or depend on wall-clock timing. Prefer deterministic
@@ -70,8 +72,10 @@ boundary being exercised:
   failure preservation, cancellation and per-instance update serialization.
 - `presentation/`: tonic/Axum transport and wire-contract behavior.
 - `composition/`: startup dependency wiring and bounded shutdown behavior. The
-  launcher's signal-free listener test stays inline because it exercises private
-  orchestration.
+  runner's private lifecycle tests stay inline: startup ordering, deadline and
+  readiness failures, bind failure, graceful HTTP/gRPC/cron drain, and pool cleanup.
+  These use isolated local listeners and a lazy pool without acquiring a database
+  connection; live PostgreSQL behavior still requires the integration test URL.
 
 Do not add integration tests for application usecases; application behavior uses
 fakes in `unit/application/`. Domain values do not need external integration

@@ -15,7 +15,7 @@ are implemented. Repository contracts return object-safe boxed `RepositoryFuture
 values. Province and city coordinate lookups and the national-boundary
 repository contract, PostgreSQL adapter, and cached decorator are implemented.
 Domain usecase contracts and application implementations are grouped under
-management, geographic, topic, and misc capabilities. The misc context usecase
+management, geographic, maintenance, topic, and misc capabilities. The misc context usecase
 accepts actor/trace metadata and delegates execution-ID generation to the utility
 factory.
 PostgreSQL/PostGIS repository adapters for all four master entities use
@@ -26,7 +26,7 @@ replace the former master-table CHECK constraints. JSON formatting uses
 listener, and shutdown settings. `src/config/` loads an optional `.env` with process
 variables taking precedence. `src/composition/` constructs one shared `Pgdt`, all
 cached repositories, usecases, and both transports, then serves HTTP and gRPC on
-separate listeners with bounded graceful shutdown. `src/main.rs` delegates to
+separate listeners with bounded graceful shutdown, alongside daily cron upkeep. `src/main.rs` delegates to
 `composition::launch`. Migrations and seeds remain external in `master_database`.
 
 ## Target source layout
@@ -51,7 +51,7 @@ src/
   presentation/
     http/                       # transport handlers and explicit wire DTOs
   composition/
-    main/                       # server dependency construction and lifecycle
+    main/                       # layer wiring, separate startup and runtime runner
 tests/
   unit/                         # black-box unit tests by source layer
   integration/                  # external-boundary tests
@@ -72,7 +72,7 @@ to a service without an actual persistence requirement.
   [repositories](src/infrastructure/repository/AGENTS.md),
   [utilities](src/infrastructure/utility/AGENTS.md).
 - [External service infrastructure](src/infrastructure/service/AGENTS.md).
-- [Presentation](src/presentation/AGENTS.md).
+- [Presentation](src/presentation/AGENTS.md), including [cron](src/presentation/cron/AGENTS.md).
 - [Composition](src/composition/AGENTS.md).
 - [Tests](tests/AGENTS.md).
 
@@ -111,21 +111,38 @@ directory; `load_from_path()` supports an explicit path. It returns `GeoIpConf`
 with account ID, license key and ordered edition IDs. It accepts the three
 required MaxMind directives, blank lines and full-line comments, and rejects
 unknown/duplicate directives or malformed values without echoing source lines.
-This loader is separate from `.env` and is not wired into startup yet; it does
-not download databases or query MMDB by itself. Keep the real file ignored
+Startup loads this file through MASTER_SERVICE_GEOIP_CONF_PATH (default
+`GeoIP.conf`). MASTER_SERVICE_GEOIP_DATABASE_PATH defaults to
+`data/GeoLite2-City.mmdb`. Paths are relative to the working directory; blank paths
+are rejected. Missing/invalid credentials configuration fails infrastructure
+construction after driver creation; the runner closes the pool on that path.
+Loading does not download databases by itself. Keep the real file ignored
 and never print its credentials. File-boundary tests use synthetic fixtures.
 
 `GeoIpService` and `HttpsGeoIp` provide local City lookups and explicit HTTPS
 release checks/downloads with validated atomic file replacement. `GetRegion` supports coordinate and IP
 lookup; `RegionQueries::with_geoip` injects the service for the latter. IP results
 retain provider estimates even when no coordinates or canonical region exist.
-The server still constructs RegionQueries without GeoIP, so IP resolution is
-not enabled in current composition. GeoIP values and
+Composition shares one GeoIP service between RegionQueries and GeoIpMaintenance.
+After driver, infrastructure, application and presentation wiring, startup
+invokes the existing maintenance usecase once and verifies readiness before
+starting listeners or cron. A missing/invalid MMDB is repaired then; refresh
+failure or a ten-minute initialization timeout fails startup. GeoIP values and
 classified errors live in domain; archive/file/MMDB and HTTP handling live under
-`infrastructure/service/geoip/`. This adapter is available for injection but is not
-wired into composition, scheduled in the background, or exposed through an API.
+`infrastructure/service/geoip/`. Cron refresh is wired into composition; no
+GeoIP/IP-region HTTP or gRPC endpoint is added.
 See the [adapter guide](src/infrastructure/service/AGENTS.md) for construction,
 size/concurrency limits, cancellation and single-writer assumptions.
+
+The `maintenance` group exposes `RefreshGeoIp`, implemented by `GeoIpMaintenance`
+with an injected GeoIpService. It updates directly when unready, otherwise checks
+for a new release before updating. Errors retain GeoIP classifications and causes;
+a successful no-op returns unit. Application logs an INFO skip when no update is
+needed; infrastructure logs the actual installation/skip outcome when called.
+After the initial startup refresh, cron runs this usecase daily at 00:00 UTC with
+a fresh context and a ten-minute
+execution timeout. It skips overlaps and missed runs and emits no job-level logs.
+Composition stops scheduling and drains running work alongside the transports.
 
 ## Style and verification
 

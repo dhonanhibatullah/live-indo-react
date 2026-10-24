@@ -16,7 +16,20 @@ pub fn logger(env: &AppEnv) -> Arc<dyn Logger> {
     ))
 }
 
-pub async fn connect(env: &AppEnv) -> Result<PgPool, DriverError> {
+pub struct Drivers {
+    pub logger: Arc<dyn Logger>,
+    pub database: pgdt::Pgdt,
+}
+
+pub async fn build(env: &AppEnv, logger: Arc<dyn Logger>) -> Result<Drivers, DriverError> {
+    let pool = connect(env).await?;
+    Ok(Drivers {
+        logger,
+        database: pgdt::Pgdt::new(pool),
+    })
+}
+
+async fn connect(env: &AppEnv) -> Result<PgPool, DriverError> {
     let postgres_ssl_mode =
         PgSslMode::from_str(&env.postgres_ssl_mode).map_err(|_| DriverError::InvalidSslMode)?;
 

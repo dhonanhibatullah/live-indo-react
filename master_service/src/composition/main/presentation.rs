@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use axum::Router;
 use tonic::service::Routes;
 
@@ -11,7 +13,7 @@ use crate::presentation::{
     http::{Dependencies as HttpDependencies, routes::router},
 };
 
-pub fn http(app: &Application) -> Router {
+fn http(app: &Application) -> Router {
     router(HttpDependencies {
         create_app_context: app.create_app_context.clone(),
         manage_topic: app.manage_topic.clone(),
@@ -28,7 +30,7 @@ pub fn http(app: &Application) -> Router {
     })
 }
 
-pub fn grpc(app: &Application) -> Routes {
+fn grpc(app: &Application) -> Routes {
     register::routes(GrpcDependencies {
         management: ManagementDependencies {
             topics: app.manage_topic.clone(),
@@ -48,4 +50,27 @@ pub fn grpc(app: &Application) -> Routes {
             topics: app.topic_catalog.clone(),
         },
     })
+}
+
+fn cron(app: &Application) -> crate::presentation::cron::Runner {
+    crate::presentation::cron::Runner::new(
+        app.create_app_context.clone(),
+        crate::presentation::cron::register::maintenance::jobs(app.refresh_geoip.clone()),
+    )
+}
+
+pub struct Presentation {
+    pub http: Router,
+    pub grpc: Routes,
+    pub cron: crate::presentation::cron::Runner,
+    pub create_app_context: Arc<dyn crate::domain::usecases::misc::app_context::CreateAppContext>,
+}
+
+pub fn build(app: &Application) -> Presentation {
+    Presentation {
+        http: http(app),
+        grpc: grpc(app),
+        cron: cron(app),
+        create_app_context: app.create_app_context.clone(),
+    }
 }

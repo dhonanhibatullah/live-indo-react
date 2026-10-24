@@ -144,10 +144,10 @@ impl HttpsGeoIp {
         Ok(last_modified(&response)? != current.modified)
     }
 
-    async fn update_database(&self) -> Result<(), GeoIpError> {
+    async fn update_database(&self) -> Result<bool, GeoIpError> {
         let permit = self.update_lock.clone().lock_owned().await;
         if !self.needs_update().await? {
-            return Ok(());
+            return Ok(false);
         }
         let mut response = self.request(Method::GET).await?;
         let modified = last_modified(&response)?;
@@ -170,7 +170,8 @@ impl HttpsGeoIp {
             archive::install(bytes, modified, &path, &state, permit)
         })
         .await
-        .map_err(failure)?
+        .map_err(failure)??;
+        Ok(true)
     }
 
     fn report<T>(
@@ -201,9 +202,13 @@ impl GeoIpService for HttpsGeoIp {
 
     fn update<'a>(&'a self, context: &'a AppContext) -> GeoIpFuture<'a, ()> {
         Box::pin(async move {
-            self.report(context, "geoip/update", self.update_database().await)?;
-            self.logger
-                .info(context, "geoip/update", "GeoIP database is current", None);
+            let installed = self.report(context, "geoip/update", self.update_database().await)?;
+            let message = if installed {
+                "GeoIP database updated"
+            } else {
+                "GeoIP update skipped: database is current"
+            };
+            self.logger.info(context, "geoip/update", message, None);
             Ok(())
         })
     }

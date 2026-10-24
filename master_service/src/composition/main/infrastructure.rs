@@ -1,6 +1,4 @@
-use std::sync::Arc;
-
-use pgdt::Pgdt;
+use std::{error::Error, sync::Arc};
 
 use crate::{
     domain::{
@@ -10,6 +8,7 @@ use crate::{
                 CityRepository, IndonesiaBoundaryRepository, PollingMethodRepository,
                 ProvinceRepository, TopicRepository,
             },
+            service::GeoIpService,
             utility::{Logger, Validator, app_context::AppContextFactory},
         },
         models::AppEnv,
@@ -21,11 +20,13 @@ use crate::{
             PostgresCity, PostgresIndonesiaBoundary, PostgresPollingMethod, PostgresProvince,
             PostgresTopic,
         },
+        service::geoip::HttpsGeoIp,
         utility::{UuidAppContextFactory, validator::RegexValidator},
     },
 };
 
 pub struct Infrastructure {
+    pub geoip: Arc<dyn GeoIpService>,
     pub app_context_factory: Arc<dyn AppContextFactory>,
     pub validator: Arc<dyn Validator>,
     pub topics: Arc<dyn TopicRepository>,
@@ -35,7 +36,27 @@ pub struct Infrastructure {
     pub indonesia_boundary: Arc<dyn IndonesiaBoundaryRepository>,
 }
 
-pub fn build(database: Pgdt, logger: Arc<dyn Logger>, env: &AppEnv) -> Infrastructure {
+/// Load credentials off the executor and initialize a local reader without downloading.
+async fn geoip(
+    env: &AppEnv,
+    logger: Arc<dyn Logger>,
+) -> Result<Arc<dyn GeoIpService>, Box<dyn Error + Send + Sync>> {
+    let path = env.geoip_conf_path.clone();
+    let configuration =
+        tokio::task::spawn_blocking(move || crate::config::geoip_conf::load_from_path(path))
+            .await??;
+    Ok(Arc::new(
+        HttpsGeoIp::new(configuration, env.geoip_database_path.clone(), logger).await?,
+    ))
+}
+
+pub async fn build(
+    drivers: &super::driver::Drivers,
+    env: &AppEnv,
+) -> Result<Infrastructure, Box<dyn Error + Send + Sync>> {
+    let logger = drivers.logger.clone();
+    let database = drivers.database.clone();
+    let geoip = geoip(env, logger.clone()).await?;
     let cache: Arc<dyn Cache> = Arc::new(MokaCache::new(
         env.cache_max_capacity,
         env.cache_individual_ttl,
@@ -67,7 +88,8 @@ pub fn build(database: Pgdt, logger: Arc<dyn Logger>, env: &AppEnv) -> Infrastru
             cache,
         ));
 
-    Infrastructure {
+    Ok(Infrastructure {
+        geoip,
         app_context_factory,
         validator,
         topics,
@@ -75,5 +97,5 @@ pub fn build(database: Pgdt, logger: Arc<dyn Logger>, env: &AppEnv) -> Infrastru
         provinces,
         cities,
         indonesia_boundary,
-    }
+    })
 }

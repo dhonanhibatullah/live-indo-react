@@ -18,11 +18,13 @@ also has app context, opaque transaction, app identity and environment models; i
 logger contract and adapter accept app context first. `master_service` also has
 master-data entity models, object-safe repository contracts and PostgreSQL adapters,
 cached repository decorators, a Moka in-memory cache contract and adapter, a validator
-contract and regex adapter, grouped management/geographic/topic usecases,
+contract and regex adapter, grouped management/geographic/maintenance/topic usecases,
 application implementations, gRPC plus Axum HTTP presentation adapters, typed
 environment loading, and composition/runtime lifecycle wiring. Master-service
-GeoIP domain models/contracts and an HTTPS download/local MMDB adapter also exist;
-GeoIP scheduling, startup wiring and transport exposure remain deferred.
+GeoIP models/contracts, an HTTPS download/local MMDB adapter and a maintenance
+refresh usecase/application also exist;
+GeoIP startup readiness initialization and daily cron refresh are available; GeoIP HTTP/gRPC
+exposure remains deferred. Cron uses application/infrastructure logging only.
 `shared/` is a separate Rust workspace for explicitly shared libraries; its `pgdt`
 crate provides context-aware PostgreSQL execution and transaction orchestration
 for the master repository adapters. `shared/proto/` contains the master-service

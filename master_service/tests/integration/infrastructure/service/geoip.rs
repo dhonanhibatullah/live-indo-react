@@ -28,6 +28,8 @@ use tokio_rustls::{
     rustls::{self, pki_types::PrivatePkcs8KeyDer},
 };
 
+use crate::support::logger::CapturingLogger;
+
 const CITY: &[u8] = include_bytes!("../../../fixtures/geoip/GeoIP2-City-Test.mmdb");
 const COUNTRY: &[u8] = include_bytes!("../../../fixtures/geoip/GeoIP2-Country-Test.mmdb");
 const RELEASE: &str = "Wed, 21 Oct 2026 12:00:00 GMT";
@@ -152,15 +154,17 @@ impl Server {
     }
 
     async fn adapter(&self, path: &std::path::Path) -> HttpsGeoIp {
-        HttpsGeoIp::with_client(
-            conf(),
-            path,
-            logger(),
-            self.client.clone(),
-            self.url.clone(),
-        )
-        .await
-        .unwrap()
+        self.adapter_with_logger(path, logger()).await
+    }
+
+    async fn adapter_with_logger(
+        &self,
+        path: &std::path::Path,
+        logger: Arc<dyn Logger>,
+    ) -> HttpsGeoIp {
+        HttpsGeoIp::with_client(conf(), path, logger, self.client.clone(), self.url.clone())
+            .await
+            .unwrap()
     }
     fn exhausted(&self) {
         assert!(self.replies.lock().unwrap().is_empty());
@@ -444,5 +448,42 @@ async fn oversized_download_is_rejected_before_reading_or_replacing_data() {
     ));
     assert_eq!(std::fs::read(&path).unwrap(), CITY);
     assert_location(&adapter, &context).await;
+    server.exhausted();
+}
+
+#[tokio::test]
+async fn update_logs_installation_skip_and_failure_as_distinct_outcomes() {
+    let server = Server::start(vec![
+        Reply::ok(RELEASE, archive(CITY)),
+        Reply::ok(RELEASE, Vec::new()),
+        Reply::ok(NEXT_RELEASE, Vec::new()),
+        Reply::ok(NEXT_RELEASE, b"invalid archive".to_vec()),
+    ])
+    .await;
+    let directory = tempfile::tempdir().unwrap();
+    let logger = Arc::new(CapturingLogger::default());
+    let adapter = server
+        .adapter_with_logger(&directory.path().join("city.mmdb"), logger.clone())
+        .await;
+    let context = AppContext::default();
+    adapter.update(&context).await.unwrap();
+    adapter.update(&context).await.unwrap();
+    assert!(adapter.update(&context).await.is_err());
+    let records = logger.records();
+    assert_eq!(records.len(), 3);
+    assert_eq!(records[0].level, Level::Info);
+    assert_eq!(records[0].message, "GeoIP database updated");
+    assert_eq!(records[1].level, Level::Info);
+    assert_eq!(
+        records[1].message,
+        "GeoIP update skipped: database is current"
+    );
+    assert_eq!(records[2].level, Level::Error);
+    assert_eq!(records[2].message, "GeoIP operation failed");
+    assert_eq!(
+        records[2].meta.as_ref().unwrap()["error_code"],
+        "GEOIP_DOWNLOAD_INVALID".into()
+    );
+    assert!(records.iter().all(|record| record.tag == "geoip/update"));
     server.exhausted();
 }

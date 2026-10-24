@@ -1,4 +1,4 @@
-use std::{net::SocketAddr, time::Duration};
+use std::{net::SocketAddr, path::PathBuf, time::Duration};
 
 use crate::domain::models::logger::{Format, Level};
 
@@ -21,6 +21,9 @@ pub struct AppEnv {
     pub cache_max_capacity: u64,
     pub cache_individual_ttl: Duration,
     pub cache_list_ttl: Duration,
+
+    pub geoip_conf_path: PathBuf,
+    pub geoip_database_path: PathBuf,
 
     pub http_addr: SocketAddr,
     pub grpc_addr: SocketAddr,

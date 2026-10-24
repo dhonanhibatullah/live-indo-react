@@ -31,6 +31,8 @@ const LOGGER_FORMAT: &str = "MASTER_SERVICE_LOGGER_FORMAT";
 const LOGGER_LEVEL: &str = "MASTER_SERVICE_LOGGER_LEVEL";
 const HTTP_ADDR: &str = "MASTER_SERVICE_HTTP_ADDR";
 const GRPC_ADDR: &str = "MASTER_SERVICE_GRPC_ADDR";
+const GEOIP_CONF_PATH: &str = "MASTER_SERVICE_GEOIP_CONF_PATH";
+const GEOIP_DATABASE_PATH: &str = "MASTER_SERVICE_GEOIP_DATABASE_PATH";
 const SHUTDOWN_TIMEOUT: &str = "MASTER_SERVICE_SHUTDOWN_TIMEOUT_MS";
 
 /// Load an optional `.env` from the working directory, overlaid by process variables.
@@ -183,6 +185,13 @@ fn from_sources(
         cache_max_capacity,
         cache_individual_ttl,
         cache_list_ttl,
+        geoip_conf_path: nonblank(GEOIP_CONF_PATH, get(GEOIP_CONF_PATH, Some("GeoIP.conf"))?)?
+            .into(),
+        geoip_database_path: nonblank(
+            GEOIP_DATABASE_PATH,
+            get(GEOIP_DATABASE_PATH, Some("data/GeoLite2-City.mmdb"))?,
+        )?
+        .into(),
         http_addr,
         grpc_addr,
         shutdown_timeout,
@@ -277,6 +286,11 @@ mod tests {
         assert_eq!(env.cache_list_ttl, Duration::from_millis(10_000));
         assert_eq!(env.http_addr, "0.0.0.0:8080".parse().expect("http addr"));
         assert_eq!(env.grpc_addr, "0.0.0.0:8081".parse().expect("grpc addr"));
+        assert_eq!(env.geoip_conf_path, std::path::Path::new("GeoIP.conf"));
+        assert_eq!(
+            env.geoip_database_path,
+            std::path::Path::new("data/GeoLite2-City.mmdb")
+        );
         assert_eq!(env.shutdown_timeout, Duration::from_millis(15_000));
     }
 
@@ -342,6 +356,32 @@ mod tests {
                 ..
             }
         ));
+    }
+
+    #[test]
+    fn geoip_paths_allow_overrides_and_reject_blank_values_without_echoing_them() {
+        let mut values = base();
+        values.insert(GEOIP_CONF_PATH.to_owned(), "/run/secrets/GeoIP.conf".into());
+        values.insert(
+            GEOIP_DATABASE_PATH.to_owned(),
+            "/var/lib/geoip/city.mmdb".into(),
+        );
+        let configuration = parse(&values).unwrap();
+        assert_eq!(
+            configuration.geoip_conf_path,
+            std::path::Path::new("/run/secrets/GeoIP.conf")
+        );
+        assert_eq!(
+            configuration.geoip_database_path,
+            std::path::Path::new("/var/lib/geoip/city.mmdb")
+        );
+        for name in [GEOIP_CONF_PATH, GEOIP_DATABASE_PATH] {
+            values.insert(name.to_owned(), " ".into());
+            assert!(
+                matches!(expect_error(&values), LoadError::Variable { name: field, .. } if field == name)
+            );
+            values.insert(name.to_owned(), "valid-path".into());
+        }
     }
 
     #[test]

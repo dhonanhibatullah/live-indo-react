@@ -22,6 +22,11 @@ Use the MaxMind download endpoint with tar.gz suffix. Follow HTTPS redirects and
 let the client strip authorization across origins. Never retain signed URLs in
 request errors or log credentials, paths containing secrets, headers or IPs.
 Log operation success/error codes through the injected context-aware logger.
+After a completed installation, update logs INFO "GeoIP database updated". When
+the serialized recheck skips replacement, log INFO "GeoIP update skipped: database
+is current". Both use `geoip/update`; failed updates emit ERROR only. Keep the
+installation outcome private to infrastructure without changing the unit-returning
+service contract. Application logs its own skip only when it never calls update.
 
 `is_ready` reports whether a validated in-memory City reader is loaded, without
 network access. Missing/corrupt local files start unready so update can repair
@@ -52,6 +57,8 @@ caller cancellation and retains its update permit until it does.
 One instance owns one database path. Multiple processes/instances writing a shared
 path require external coordination. Replacement is atomic during operation, not
 a promise of durable directory metadata across a machine crash. No background
-scheduler, retries, automatic startup downloads, routes or RPCs are introduced.
+scheduler, retries, automatic startup downloads, routes or RPCs belong in this
+adapter. Composition now shares it with region lookup and maintenance; cron
+presentation triggers maintenance daily at 00:00 UTC.
 Tests use local HTTPS and dummy MaxMind databases under
 [tests](../../../tests/AGENTS.md), never production credentials or downloads.

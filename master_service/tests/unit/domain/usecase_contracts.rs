@@ -6,6 +6,7 @@ use master_service::domain::{
     usecases::{
         UsecaseFuture,
         geographic::{GetCity, GetProvince, GetRegion, IsInsideIndonesia},
+        maintenance::RefreshGeoIp,
         management::{
             ManageCity, ManageIndonesiaBoundary, ManagePollingMethod, ManageProvince, ManageTopic,
         },
@@ -15,6 +16,12 @@ use master_service::domain::{
 
 #[test]
 fn usecase_contracts_are_object_safe_and_futures_are_send() {
+    fn accept_maintenance(service: &dyn RefreshGeoIp) {
+        let context = master_service::domain::models::AppContext::default();
+        fn require_send<T: Send>(_: T) {}
+        require_send(service.refresh_geoip(&context));
+    }
+
     fn accept_management(
         _: &dyn ManageTopic,
         _: &dyn ManagePollingMethod,
@@ -41,6 +48,7 @@ fn usecase_contracts_are_object_safe_and_futures_are_send() {
     }
     fn future_is_send(_: UsecaseFuture<'static, ()>) {}
 
+    let _ = accept_maintenance;
     let _ = accept_management;
     let _ = accept_geographic;
     let _ = accept_topic;

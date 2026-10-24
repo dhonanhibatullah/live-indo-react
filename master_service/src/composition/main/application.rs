@@ -5,6 +5,7 @@ use crate::composition::main::infrastructure::Infrastructure;
 use crate::{
     application::{
         geographic::{CityQueries, IndonesiaQueries, ProvinceQueries, RegionQueries},
+        maintenance::GeoIpMaintenance,
         management::{
             CityManagement, IndonesiaBoundaryManagement, PollingMethodManagement,
             ProvinceManagement, TopicManagement,
@@ -16,6 +17,7 @@ use crate::{
         contracts::utility::Logger,
         usecases::{
             geographic::{GetCity, GetProvince, GetRegion, IsInsideIndonesia},
+            maintenance::RefreshGeoIp,
             management::{
                 ManageCity, ManageIndonesiaBoundary, ManagePollingMethod, ManageProvince,
                 ManageTopic,
@@ -27,6 +29,7 @@ use crate::{
 };
 
 pub struct Application {
+    pub refresh_geoip: Arc<dyn RefreshGeoIp>,
     pub create_app_context: Arc<dyn CreateAppContext>,
     pub manage_topic: Arc<dyn ManageTopic>,
     pub manage_polling_method: Arc<dyn ManagePollingMethod>,
@@ -42,6 +45,10 @@ pub struct Application {
 }
 
 pub fn build(infrastructure: Infrastructure, logger: Arc<dyn Logger>) -> Application {
+    let refresh_geoip: Arc<dyn RefreshGeoIp> = Arc::new(GeoIpMaintenance::new(
+        infrastructure.geoip.clone(),
+        logger.clone(),
+    ));
     let create_app_context: Arc<dyn CreateAppContext> =
         Arc::new(AppContextService::new(infrastructure.app_context_factory));
 
@@ -83,11 +90,14 @@ pub fn build(infrastructure: Infrastructure, logger: Arc<dyn Logger>) -> Applica
         infrastructure.cities.clone(),
         logger.clone(),
     ));
-    let get_region: Arc<dyn GetRegion> = Arc::new(RegionQueries::new(
-        infrastructure.cities.clone(),
-        infrastructure.provinces.clone(),
-        logger.clone(),
-    ));
+    let get_region: Arc<dyn GetRegion> = Arc::new(
+        RegionQueries::new(
+            infrastructure.cities.clone(),
+            infrastructure.provinces.clone(),
+            logger.clone(),
+        )
+        .with_geoip(infrastructure.geoip),
+    );
     let is_inside_indonesia: Arc<dyn IsInsideIndonesia> =
         Arc::new(IndonesiaQueries::new(infrastructure.indonesia_boundary));
     let polling_method_catalog: Arc<dyn PollingMethodCatalog> = Arc::new(
@@ -97,6 +107,7 @@ pub fn build(infrastructure: Infrastructure, logger: Arc<dyn Logger>) -> Applica
         Arc::new(TopicQueries::new(infrastructure.topics, logger));
 
     Application {
+        refresh_geoip,
         create_app_context,
         manage_topic,
         manage_polling_method,

@@ -49,7 +49,9 @@ cloneable handle with identity-based equality and typed downcasting for
 infrastructure adapters. `AppEnv` holds logger format/level plus PostgreSQL host,
 port, credentials, database, SSL mode, pool size, connect timeout, cache maximum
 capacity, and separate individual/list cache TTLs; it deliberately does not
-implement `Debug` because it contains a password.
+implement `Debug` because it contains a password. It also holds the GeoIP
+credentials-file and MMDB-file paths as PathBuf values; configuration supplies
+working-directory-relative defaults and rejects blank values.
 Environment parsing, default selection, setting validation, pool construction,
 and cache construction belong to configuration/composition,
 not this model layer.
