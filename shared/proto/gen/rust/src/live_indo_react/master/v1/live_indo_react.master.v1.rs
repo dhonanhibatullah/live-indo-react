@@ -44,6 +44,13 @@ pub enum ErrorCode {
     CityNotFound = 31,
     CityKemendagriCodeConflict = 32,
     CityProvinceNotFound = 33,
+    GeoipConfigurationInvalid = 34,
+    GeoipNotReady = 35,
+    GeoipDatabaseInvalid = 36,
+    GeoipDownloadInvalid = 37,
+    GeoipUnavailable = 38,
+    GeoipTimeout = 39,
+    GeoipFailure = 40,
 }
 impl ErrorCode {
     /// String value of the enum field names used in the ProtoBuf definition.
@@ -86,6 +93,13 @@ impl ErrorCode {
             Self::CityNotFound => "ERROR_CODE_CITY_NOT_FOUND",
             Self::CityKemendagriCodeConflict => "ERROR_CODE_CITY_KEMENDAGRI_CODE_CONFLICT",
             Self::CityProvinceNotFound => "ERROR_CODE_CITY_PROVINCE_NOT_FOUND",
+            Self::GeoipConfigurationInvalid => "ERROR_CODE_GEOIP_CONFIGURATION_INVALID",
+            Self::GeoipNotReady => "ERROR_CODE_GEOIP_NOT_READY",
+            Self::GeoipDatabaseInvalid => "ERROR_CODE_GEOIP_DATABASE_INVALID",
+            Self::GeoipDownloadInvalid => "ERROR_CODE_GEOIP_DOWNLOAD_INVALID",
+            Self::GeoipUnavailable => "ERROR_CODE_GEOIP_UNAVAILABLE",
+            Self::GeoipTimeout => "ERROR_CODE_GEOIP_TIMEOUT",
+            Self::GeoipFailure => "ERROR_CODE_GEOIP_FAILURE",
         }
     }
     /// Creates an enum from field names used in the ProtoBuf definition.
@@ -125,6 +139,13 @@ impl ErrorCode {
             "ERROR_CODE_CITY_NOT_FOUND" => Some(Self::CityNotFound),
             "ERROR_CODE_CITY_KEMENDAGRI_CODE_CONFLICT" => Some(Self::CityKemendagriCodeConflict),
             "ERROR_CODE_CITY_PROVINCE_NOT_FOUND" => Some(Self::CityProvinceNotFound),
+            "ERROR_CODE_GEOIP_CONFIGURATION_INVALID" => Some(Self::GeoipConfigurationInvalid),
+            "ERROR_CODE_GEOIP_NOT_READY" => Some(Self::GeoipNotReady),
+            "ERROR_CODE_GEOIP_DATABASE_INVALID" => Some(Self::GeoipDatabaseInvalid),
+            "ERROR_CODE_GEOIP_DOWNLOAD_INVALID" => Some(Self::GeoipDownloadInvalid),
+            "ERROR_CODE_GEOIP_UNAVAILABLE" => Some(Self::GeoipUnavailable),
+            "ERROR_CODE_GEOIP_TIMEOUT" => Some(Self::GeoipTimeout),
+            "ERROR_CODE_GEOIP_FAILURE" => Some(Self::GeoipFailure),
             _ => None,
         }
     }
@@ -270,6 +291,37 @@ pub struct Region {
     #[prost(message, optional, tag="2")]
     pub city: ::core::option::Option<City>,
 }
+/// Provider subdivision codes are not canonical Kemendagri codes.
+#[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct GeoIpSubdivision {
+    #[prost(string, optional, tag="1")]
+    pub code: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag="2")]
+    pub name: ::core::option::Option<::prost::alloc::string::String>,
+}
+/// Estimated location; absent values remain absent rather than zero or empty.
+/// Coordinates are approximate provider data, not user-supplied GPS coordinates.
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct GeoIp {
+    #[prost(string, optional, tag="1")]
+    pub continent_code: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag="2")]
+    pub country_code: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag="3")]
+    pub country_name: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(message, repeated, tag="4")]
+    pub subdivisions: ::prost::alloc::vec::Vec<GeoIpSubdivision>,
+    #[prost(string, optional, tag="5")]
+    pub city_name: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag="6")]
+    pub postal_code: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(message, optional, tag="7")]
+    pub coordinates: ::core::option::Option<Coordinate>,
+    #[prost(uint32, optional, tag="8")]
+    pub accuracy_radius_km: ::core::option::Option<u32>,
+    #[prost(string, optional, tag="9")]
+    pub time_zone: ::core::option::Option<::prost::alloc::string::String>,
+}
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
 #[repr(i32)]
 pub enum CityKind {
@@ -368,6 +420,19 @@ pub struct GetRegionByCoordRequest {
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct GetRegionByCoordResponse {
     #[prost(message, optional, tag="1")]
+    pub region: ::core::option::Option<Region>,
+}
+/// An explicit lookup address, not caller identity or forwarded-header metadata.
+#[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct GetRegionByIpRequest {
+    #[prost(string, tag="1")]
+    pub ip: ::prost::alloc::string::String,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct GetRegionByIpResponse {
+    #[prost(message, optional, tag="1")]
+    pub geoip: ::core::option::Option<GeoIp>,
+    #[prost(message, optional, tag="2")]
     pub region: ::core::option::Option<Region>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]

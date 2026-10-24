@@ -2,7 +2,7 @@ use chrono::{DateTime, NaiveDate, Utc};
 use serde::Serialize;
 
 use crate::domain::{
-    models::entity::{City, IndonesiaBoundary, PollingMethod, Province, Topic},
+    models::entity::{City, GeoIp, IndonesiaBoundary, PollingMethod, Province, Topic},
     usecases::geographic::Region,
 };
 
@@ -165,4 +165,56 @@ fn timestamp(value: DateTime<Utc>) -> String {
 
 fn date(value: NaiveDate) -> String {
     value.to_string()
+}
+
+/// Provider estimate; fields remain nullable and no lookup IP is echoed.
+#[derive(Clone, Serialize)]
+pub struct GeoIpResponse {
+    pub continent_code: Option<String>,
+    pub country_code: Option<String>,
+    pub country_name: Option<String>,
+    pub subdivisions: Vec<GeoIpSubdivisionResponse>,
+    pub city_name: Option<String>,
+    pub postal_code: Option<String>,
+    pub coordinates: Option<GeoIpCoordinatesResponse>,
+    pub accuracy_radius_km: Option<u16>,
+    pub time_zone: Option<String>,
+}
+
+#[derive(Clone, Serialize)]
+pub struct GeoIpSubdivisionResponse {
+    pub code: Option<String>,
+    pub name: Option<String>,
+}
+
+#[derive(Clone, Serialize)]
+pub struct GeoIpCoordinatesResponse {
+    pub longitude: f64,
+    pub latitude: f64,
+}
+
+pub(crate) fn geoip(value: GeoIp) -> GeoIpResponse {
+    GeoIpResponse {
+        continent_code: value.continent_code,
+        country_code: value.country_code,
+        country_name: value.country_name,
+        subdivisions: value
+            .subdivisions
+            .into_iter()
+            .map(|subdivision| GeoIpSubdivisionResponse {
+                code: subdivision.code,
+                name: subdivision.name,
+            })
+            .collect(),
+        city_name: value.city_name,
+        postal_code: value.postal_code,
+        coordinates: value
+            .coordinates
+            .map(|coordinate| GeoIpCoordinatesResponse {
+                longitude: coordinate.longitude,
+                latitude: coordinate.latitude,
+            }),
+        accuracy_radius_km: value.accuracy_radius_km,
+        time_zone: value.time_zone,
+    }
 }

@@ -340,3 +340,158 @@ async fn http_rejects_missing_metadata_and_maps_domain_errors() {
     let body: serde_json::Value = serde_json::from_slice(&body).expect("json response");
     assert_eq!(body["code"], "TOPIC_NOT_FOUND");
 }
+
+#[tokio::test]
+async fn http_ip_region_lookup_preserves_estimates_absence_and_context_for_both_ip_families() {
+    use crate::support::region::{Mode, RegionUsecase};
+    let regions = Arc::new(RegionUsecase::new());
+    let mut dependencies = dependencies(Arc::new(FakeUsecases::new()));
+    dependencies.get_region = regions.clone();
+    let app = router(dependencies);
+    for ip in ["203.0.113.1", "2001:db8::1"] {
+        for mode in [
+            Mode::Full,
+            Mode::EstimateOnly,
+            Mode::NoCoordinates,
+            Mode::Unknown,
+        ] {
+            regions.set(mode);
+            let response = app
+                .clone()
+                .oneshot(request(
+                    "GET",
+                    &format!("/v1/regions/by-ip?ip={ip}"),
+                    None,
+                    true,
+                ))
+                .await
+                .unwrap();
+            assert_eq!(response.status(), StatusCode::OK);
+            let bytes = to_bytes(response.into_body(), usize::MAX).await.unwrap();
+            let body: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+            assert!(!String::from_utf8_lossy(&bytes).contains(ip));
+            assert!(body.get("ip").is_none());
+            if matches!(mode, Mode::Unknown) {
+                assert!(body["geoip"].is_null());
+            } else {
+                assert_eq!(body["geoip"]["country_code"], "ID");
+                assert_eq!(body["geoip"]["subdivisions"][0]["code"], "JK");
+                assert_eq!(body["geoip"]["accuracy_radius_km"], 10);
+                assert_eq!(body["geoip"]["time_zone"], "Asia/Jakarta");
+                assert!(body["geoip"]["postal_code"].is_null());
+                if matches!(mode, Mode::NoCoordinates) {
+                    assert!(body["geoip"]["coordinates"].is_null());
+                } else {
+                    assert_eq!(body["geoip"]["coordinates"]["longitude"], 106.8);
+                }
+            }
+            if matches!(mode, Mode::Full) {
+                assert_eq!(body["region"]["province"]["kemendagri_code"], "31");
+                assert_eq!(body["region"]["city"]["kemendagri_code"], "31.01");
+            } else {
+                assert!(body["region"].is_null());
+            }
+            let calls = regions.calls.lock().unwrap();
+            let (context, observed) = calls.last().unwrap();
+            assert_eq!(*observed, ip.parse::<std::net::IpAddr>().unwrap());
+            assert_eq!(context.actor.as_deref(), Some("actor"));
+            assert_eq!(context.trace_id, Some(Uuid::from_u128(42)));
+            assert!(context.execution_id.is_some());
+        }
+    }
+    let coordinate = app
+        .oneshot(request(
+            "GET",
+            "/v1/regions/by-coordinate?longitude=106.8&latitude=-6.2",
+            None,
+            true,
+        ))
+        .await
+        .unwrap();
+    assert_eq!(coordinate.status(), StatusCode::OK);
+}
+
+#[tokio::test]
+async fn http_ip_lookup_rejects_invalid_inputs_without_calling_usecase_or_echoing_ip() {
+    use crate::support::region::RegionUsecase;
+    let regions = Arc::new(RegionUsecase::new());
+    let mut dependencies = dependencies(Arc::new(FakeUsecases::new()));
+    dependencies.get_region = regions.clone();
+    let app = router(dependencies);
+    for query in [
+        "",
+        "?ip=",
+        "?ip=not-an-ip",
+        "?ip=203.0.113.1:80",
+        "?ip=203.0.113.1/24",
+        "?ip=203.0.113.1&extra=true",
+        "?ip=203.0.113.1&ip=203.0.113.2",
+    ] {
+        let response = app
+            .clone()
+            .oneshot(request(
+                "GET",
+                &format!("/v1/regions/by-ip{query}"),
+                None,
+                true,
+            ))
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+        let body: serde_json::Value =
+            serde_json::from_slice(&to_bytes(response.into_body(), usize::MAX).await.unwrap())
+                .unwrap();
+        assert_eq!(body["code"], "BAD_ARGS");
+        assert_eq!(body["message"], "invalid query parameter");
+    }
+    let missing_context = app
+        .oneshot(request(
+            "GET",
+            "/v1/regions/by-ip?ip=203.0.113.1",
+            None,
+            false,
+        ))
+        .await
+        .unwrap();
+    assert_eq!(missing_context.status(), StatusCode::BAD_REQUEST);
+    assert!(regions.calls.lock().unwrap().is_empty());
+}
+
+#[tokio::test]
+async fn http_ip_lookup_maps_classified_geoip_errors_to_safe_responses() {
+    use crate::support::region::{Failure, Mode, RegionUsecase};
+    let regions = Arc::new(RegionUsecase::new());
+    let mut dependencies = dependencies(Arc::new(FakeUsecases::new()));
+    dependencies.get_region = regions.clone();
+    let app = router(dependencies);
+    for (failure, status) in [
+        (Failure::Configuration, StatusCode::INTERNAL_SERVER_ERROR),
+        (Failure::NotReady, StatusCode::SERVICE_UNAVAILABLE),
+        (Failure::Database, StatusCode::INTERNAL_SERVER_ERROR),
+        (Failure::Download, StatusCode::INTERNAL_SERVER_ERROR),
+        (Failure::Unavailable, StatusCode::SERVICE_UNAVAILABLE),
+        (Failure::Timeout, StatusCode::GATEWAY_TIMEOUT),
+        (Failure::Operation, StatusCode::INTERNAL_SERVER_ERROR),
+    ] {
+        regions.set(Mode::Error(failure));
+        let response = app
+            .clone()
+            .oneshot(request(
+                "GET",
+                "/v1/regions/by-ip?ip=203.0.113.1",
+                None,
+                true,
+            ))
+            .await
+            .unwrap();
+        assert_eq!(response.status(), status);
+        let bytes = to_bytes(response.into_body(), usize::MAX).await.unwrap();
+        let body: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+        assert_eq!(body["code"], failure.error().code());
+        assert!(!String::from_utf8_lossy(&bytes).contains("private-provider-secret"));
+        assert!(!String::from_utf8_lossy(&bytes).contains("203.0.113.1"));
+        if status == StatusCode::INTERNAL_SERVER_ERROR {
+            assert_eq!(body["message"], "something went wrong");
+        }
+    }
+}

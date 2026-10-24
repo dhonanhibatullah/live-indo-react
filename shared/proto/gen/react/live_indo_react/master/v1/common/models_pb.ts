@@ -6,7 +6,7 @@ import type { GenEnum, GenFile, GenMessage } from "@bufbuild/protobuf/codegenv2"
 import { enumDesc, fileDesc, messageDesc } from "@bufbuild/protobuf/codegenv2";
 import type { Timestamp } from "@bufbuild/protobuf/wkt";
 import { file_google_protobuf_timestamp } from "@bufbuild/protobuf/wkt";
-import type { MultiPolygon } from "./geometry_pb";
+import type { Coordinate, MultiPolygon } from "./geometry_pb";
 import { file_live_indo_react_master_v1_common_geometry } from "./geometry_pb";
 import type { Message } from "@bufbuild/protobuf";
 
@@ -14,7 +14,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file live_indo_react/master/v1/common/models.proto.
  */
 export const file_live_indo_react_master_v1_common_models: GenFile = /*@__PURE__*/
-  fileDesc("Ci1saXZlX2luZG9fcmVhY3QvbWFzdGVyL3YxL2NvbW1vbi9tb2RlbHMucHJvdG8SGWxpdmVfaW5kb19yZWFjdC5tYXN0ZXIudjEiMAoERGF0ZRIMCgR5ZWFyGAEgASgFEg0KBW1vbnRoGAIgASgFEgsKA2RheRgDIAEoBSKdAQoLQXVkaXRGaWVsZHMSLgoKY3JlYXRlZF9hdBgBIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASLgoKdXBkYXRlZF9hdBgCIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASLgoKZGVsZXRlZF9hdBgDIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXAiHAoKU3RyaW5nTGlzdBIOCgZ2YWx1ZXMYASADKAkixAEKBVRvcGljEgoKAmlkGAEgASgDEgwKBHNsdWcYAiABKAkSDAoEbmFtZRgDIAEoCRITCgtkZXNjcmlwdGlvbhgEIAEoCRIZChFwb2xsaW5nX21ldGhvZF9pZBgFIAEoAxIZChFzZWxlY3Rpb25fb3B0aW9ucxgGIAMoCRIRCglpc19hY3RpdmUYByABKAgSNQoFYXVkaXQYZCABKAsyJi5saXZlX2luZG9fcmVhY3QubWFzdGVyLnYxLkF1ZGl0RmllbGRzIpYBCg1Qb2xsaW5nTWV0aG9kEgoKAmlkGAEgASgDEgwKBGNvZGUYAiABKAkSDAoEbmFtZRgDIAEoCRITCgtkZXNjcmlwdGlvbhgEIAEoCRIRCglpc19hY3RpdmUYBSABKAgSNQoFYXVkaXQYZCABKAsyJi5saXZlX2luZG9fcmVhY3QubWFzdGVyLnYxLkF1ZGl0RmllbGRzIp0CCghQcm92aW5jZRIKCgJpZBgBIAEoAxIXCg9rZW1lbmRhZ3JpX2NvZGUYAiABKAkSDAoEbmFtZRgDIAEoCRI5Cghib3VuZGFyeRgEIAEoCzInLmxpdmVfaW5kb19yZWFjdC5tYXN0ZXIudjEuTXVsdGlQb2x5Z29uEhcKD2JvdW5kYXJ5X3NvdXJjZRgFIAEoCRJAChdib3VuZGFyeV9yZWZlcmVuY2VfZGF0ZRgGIAEoCzIfLmxpdmVfaW5kb19yZWFjdC5tYXN0ZXIudjEuRGF0ZRIRCglpc19hY3RpdmUYByABKAgSNQoFYXVkaXQYZCABKAsyJi5saXZlX2luZG9fcmVhY3QubWFzdGVyLnYxLkF1ZGl0RmllbGRzIuECCgRDaXR5EgoKAmlkGAEgASgDEhMKC3Byb3ZpbmNlX2lkGAIgASgDEhcKD2tlbWVuZGFncmlfY29kZRgDIAEoCRIxCgRraW5kGAQgASgOMiMubGl2ZV9pbmRvX3JlYWN0Lm1hc3Rlci52MS5DaXR5S2luZBIMCgRuYW1lGAUgASgJEjkKCGJvdW5kYXJ5GAYgASgLMicubGl2ZV9pbmRvX3JlYWN0Lm1hc3Rlci52MS5NdWx0aVBvbHlnb24SFwoPYm91bmRhcnlfc291cmNlGAcgASgJEkAKF2JvdW5kYXJ5X3JlZmVyZW5jZV9kYXRlGAggASgLMh8ubGl2ZV9pbmRvX3JlYWN0Lm1hc3Rlci52MS5EYXRlEhEKCWlzX2FjdGl2ZRgJIAEoCBI1CgVhdWRpdBhkIAEoCzImLmxpdmVfaW5kb19yZWFjdC5tYXN0ZXIudjEuQXVkaXRGaWVsZHMi7AEKEUluZG9uZXNpYUJvdW5kYXJ5EgoKAmlkGAEgASgDEjkKCGJvdW5kYXJ5GAIgASgLMicubGl2ZV9pbmRvX3JlYWN0Lm1hc3Rlci52MS5NdWx0aVBvbHlnb24SFwoPYm91bmRhcnlfc291cmNlGAMgASgJEkAKF2JvdW5kYXJ5X3JlZmVyZW5jZV9kYXRlGAQgASgLMh8ubGl2ZV9pbmRvX3JlYWN0Lm1hc3Rlci52MS5EYXRlEjUKBWF1ZGl0GGQgASgLMiYubGl2ZV9pbmRvX3JlYWN0Lm1hc3Rlci52MS5BdWRpdEZpZWxkcyJuCgZSZWdpb24SNQoIcHJvdmluY2UYASABKAsyIy5saXZlX2luZG9fcmVhY3QubWFzdGVyLnYxLlByb3ZpbmNlEi0KBGNpdHkYAiABKAsyHy5saXZlX2luZG9fcmVhY3QubWFzdGVyLnYxLkNpdHkqUAoIQ2l0eUtpbmQSGQoVQ0lUWV9LSU5EX1VOU1BFQ0lGSUVEEAASEgoOQ0lUWV9LSU5EX0NJVFkQARIVChFDSVRZX0tJTkRfUkVHRU5DWRACYgZwcm90bzM", [file_google_protobuf_timestamp, file_live_indo_react_master_v1_common_geometry]);
+  fileDesc("Ci1saXZlX2luZG9fcmVhY3QvbWFzdGVyL3YxL2NvbW1vbi9tb2RlbHMucHJvdG8SGWxpdmVfaW5kb19yZWFjdC5tYXN0ZXIudjEiMAoERGF0ZRIMCgR5ZWFyGAEgASgFEg0KBW1vbnRoGAIgASgFEgsKA2RheRgDIAEoBSKdAQoLQXVkaXRGaWVsZHMSLgoKY3JlYXRlZF9hdBgBIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASLgoKdXBkYXRlZF9hdBgCIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASLgoKZGVsZXRlZF9hdBgDIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXAiHAoKU3RyaW5nTGlzdBIOCgZ2YWx1ZXMYASADKAkixAEKBVRvcGljEgoKAmlkGAEgASgDEgwKBHNsdWcYAiABKAkSDAoEbmFtZRgDIAEoCRITCgtkZXNjcmlwdGlvbhgEIAEoCRIZChFwb2xsaW5nX21ldGhvZF9pZBgFIAEoAxIZChFzZWxlY3Rpb25fb3B0aW9ucxgGIAMoCRIRCglpc19hY3RpdmUYByABKAgSNQoFYXVkaXQYZCABKAsyJi5saXZlX2luZG9fcmVhY3QubWFzdGVyLnYxLkF1ZGl0RmllbGRzIpYBCg1Qb2xsaW5nTWV0aG9kEgoKAmlkGAEgASgDEgwKBGNvZGUYAiABKAkSDAoEbmFtZRgDIAEoCRITCgtkZXNjcmlwdGlvbhgEIAEoCRIRCglpc19hY3RpdmUYBSABKAgSNQoFYXVkaXQYZCABKAsyJi5saXZlX2luZG9fcmVhY3QubWFzdGVyLnYxLkF1ZGl0RmllbGRzIp0CCghQcm92aW5jZRIKCgJpZBgBIAEoAxIXCg9rZW1lbmRhZ3JpX2NvZGUYAiABKAkSDAoEbmFtZRgDIAEoCRI5Cghib3VuZGFyeRgEIAEoCzInLmxpdmVfaW5kb19yZWFjdC5tYXN0ZXIudjEuTXVsdGlQb2x5Z29uEhcKD2JvdW5kYXJ5X3NvdXJjZRgFIAEoCRJAChdib3VuZGFyeV9yZWZlcmVuY2VfZGF0ZRgGIAEoCzIfLmxpdmVfaW5kb19yZWFjdC5tYXN0ZXIudjEuRGF0ZRIRCglpc19hY3RpdmUYByABKAgSNQoFYXVkaXQYZCABKAsyJi5saXZlX2luZG9fcmVhY3QubWFzdGVyLnYxLkF1ZGl0RmllbGRzIuECCgRDaXR5EgoKAmlkGAEgASgDEhMKC3Byb3ZpbmNlX2lkGAIgASgDEhcKD2tlbWVuZGFncmlfY29kZRgDIAEoCRIxCgRraW5kGAQgASgOMiMubGl2ZV9pbmRvX3JlYWN0Lm1hc3Rlci52MS5DaXR5S2luZBIMCgRuYW1lGAUgASgJEjkKCGJvdW5kYXJ5GAYgASgLMicubGl2ZV9pbmRvX3JlYWN0Lm1hc3Rlci52MS5NdWx0aVBvbHlnb24SFwoPYm91bmRhcnlfc291cmNlGAcgASgJEkAKF2JvdW5kYXJ5X3JlZmVyZW5jZV9kYXRlGAggASgLMh8ubGl2ZV9pbmRvX3JlYWN0Lm1hc3Rlci52MS5EYXRlEhEKCWlzX2FjdGl2ZRgJIAEoCBI1CgVhdWRpdBhkIAEoCzImLmxpdmVfaW5kb19yZWFjdC5tYXN0ZXIudjEuQXVkaXRGaWVsZHMi7AEKEUluZG9uZXNpYUJvdW5kYXJ5EgoKAmlkGAEgASgDEjkKCGJvdW5kYXJ5GAIgASgLMicubGl2ZV9pbmRvX3JlYWN0Lm1hc3Rlci52MS5NdWx0aVBvbHlnb24SFwoPYm91bmRhcnlfc291cmNlGAMgASgJEkAKF2JvdW5kYXJ5X3JlZmVyZW5jZV9kYXRlGAQgASgLMh8ubGl2ZV9pbmRvX3JlYWN0Lm1hc3Rlci52MS5EYXRlEjUKBWF1ZGl0GGQgASgLMiYubGl2ZV9pbmRvX3JlYWN0Lm1hc3Rlci52MS5BdWRpdEZpZWxkcyJuCgZSZWdpb24SNQoIcHJvdmluY2UYASABKAsyIy5saXZlX2luZG9fcmVhY3QubWFzdGVyLnYxLlByb3ZpbmNlEi0KBGNpdHkYAiABKAsyHy5saXZlX2luZG9fcmVhY3QubWFzdGVyLnYxLkNpdHkiSgoQR2VvSXBTdWJkaXZpc2lvbhIRCgRjb2RlGAEgASgJSACIAQESEQoEbmFtZRgCIAEoCUgBiAEBQgcKBV9jb2RlQgcKBV9uYW1lIrwDCgVHZW9JcBIbCg5jb250aW5lbnRfY29kZRgBIAEoCUgAiAEBEhkKDGNvdW50cnlfY29kZRgCIAEoCUgBiAEBEhkKDGNvdW50cnlfbmFtZRgDIAEoCUgCiAEBEkEKDHN1YmRpdmlzaW9ucxgEIAMoCzIrLmxpdmVfaW5kb19yZWFjdC5tYXN0ZXIudjEuR2VvSXBTdWJkaXZpc2lvbhIWCgljaXR5X25hbWUYBSABKAlIA4gBARIYCgtwb3N0YWxfY29kZRgGIAEoCUgEiAEBEjoKC2Nvb3JkaW5hdGVzGAcgASgLMiUubGl2ZV9pbmRvX3JlYWN0Lm1hc3Rlci52MS5Db29yZGluYXRlEh8KEmFjY3VyYWN5X3JhZGl1c19rbRgIIAEoDUgFiAEBEhYKCXRpbWVfem9uZRgJIAEoCUgGiAEBQhEKD19jb250aW5lbnRfY29kZUIPCg1fY291bnRyeV9jb2RlQg8KDV9jb3VudHJ5X25hbWVCDAoKX2NpdHlfbmFtZUIOCgxfcG9zdGFsX2NvZGVCFQoTX2FjY3VyYWN5X3JhZGl1c19rbUIMCgpfdGltZV96b25lKlAKCENpdHlLaW5kEhkKFUNJVFlfS0lORF9VTlNQRUNJRklFRBAAEhIKDkNJVFlfS0lORF9DSVRZEAESFQoRQ0lUWV9LSU5EX1JFR0VOQ1kQAmIGcHJvdG8z", [file_google_protobuf_timestamp, file_live_indo_react_master_v1_common_geometry]);
 
 /**
  * @generated from message live_indo_react.master.v1.Date
@@ -353,6 +353,90 @@ export type Region = Message<"live_indo_react.master.v1.Region"> & {
  */
 export const RegionSchema: GenMessage<Region> = /*@__PURE__*/
   messageDesc(file_live_indo_react_master_v1_common_models, 8);
+
+/**
+ * Provider subdivision codes are not canonical Kemendagri codes.
+ *
+ * @generated from message live_indo_react.master.v1.GeoIpSubdivision
+ */
+export type GeoIpSubdivision = Message<"live_indo_react.master.v1.GeoIpSubdivision"> & {
+  /**
+   * @generated from field: optional string code = 1;
+   */
+  code?: string | undefined;
+
+  /**
+   * @generated from field: optional string name = 2;
+   */
+  name?: string | undefined;
+};
+
+/**
+ * Describes the message live_indo_react.master.v1.GeoIpSubdivision.
+ * Use `create(GeoIpSubdivisionSchema)` to create a new message.
+ */
+export const GeoIpSubdivisionSchema: GenMessage<GeoIpSubdivision> = /*@__PURE__*/
+  messageDesc(file_live_indo_react_master_v1_common_models, 9);
+
+/**
+ * Estimated location; absent values remain absent rather than zero or empty.
+ * Coordinates are approximate provider data, not user-supplied GPS coordinates.
+ *
+ * @generated from message live_indo_react.master.v1.GeoIp
+ */
+export type GeoIp = Message<"live_indo_react.master.v1.GeoIp"> & {
+  /**
+   * @generated from field: optional string continent_code = 1;
+   */
+  continentCode?: string | undefined;
+
+  /**
+   * @generated from field: optional string country_code = 2;
+   */
+  countryCode?: string | undefined;
+
+  /**
+   * @generated from field: optional string country_name = 3;
+   */
+  countryName?: string | undefined;
+
+  /**
+   * @generated from field: repeated live_indo_react.master.v1.GeoIpSubdivision subdivisions = 4;
+   */
+  subdivisions: GeoIpSubdivision[];
+
+  /**
+   * @generated from field: optional string city_name = 5;
+   */
+  cityName?: string | undefined;
+
+  /**
+   * @generated from field: optional string postal_code = 6;
+   */
+  postalCode?: string | undefined;
+
+  /**
+   * @generated from field: live_indo_react.master.v1.Coordinate coordinates = 7;
+   */
+  coordinates?: Coordinate | undefined;
+
+  /**
+   * @generated from field: optional uint32 accuracy_radius_km = 8;
+   */
+  accuracyRadiusKm?: number | undefined;
+
+  /**
+   * @generated from field: optional string time_zone = 9;
+   */
+  timeZone?: string | undefined;
+};
+
+/**
+ * Describes the message live_indo_react.master.v1.GeoIp.
+ * Use `create(GeoIpSchema)` to create a new message.
+ */
+export const GeoIpSchema: GenMessage<GeoIp> = /*@__PURE__*/
+  messageDesc(file_live_indo_react_master_v1_common_models, 10);
 
 /**
  * @generated from enum live_indo_react.master.v1.CityKind

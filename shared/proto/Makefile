@@ -8,7 +8,7 @@ generate:
 	@cd .. && cargo fmt --all
 
 breaking:
-	@buf breaking --against '.git#branch=development'
+	@buf breaking --against '../../.git#branch=development,subdir=shared/proto'
 
 test:
 	@cd .. && cargo test -p live-indo-proto

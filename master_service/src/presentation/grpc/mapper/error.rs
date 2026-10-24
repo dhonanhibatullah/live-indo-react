@@ -98,6 +98,14 @@ fn classify(code: &str) -> (Code, ErrorCode) {
         }
         "CITY_PROVINCE_NOT_FOUND" => (Code::NotFound, ErrorCode::CityProvinceNotFound),
 
+        "GEOIP_CONFIGURATION_INVALID" => (Code::Internal, ErrorCode::GeoipConfigurationInvalid),
+        "GEOIP_NOT_READY" => (Code::Unavailable, ErrorCode::GeoipNotReady),
+        "GEOIP_DATABASE_INVALID" => (Code::Internal, ErrorCode::GeoipDatabaseInvalid),
+        "GEOIP_DOWNLOAD_INVALID" => (Code::Internal, ErrorCode::GeoipDownloadInvalid),
+        "GEOIP_UNAVAILABLE" => (Code::Unavailable, ErrorCode::GeoipUnavailable),
+        "GEOIP_TIMEOUT" => (Code::DeadlineExceeded, ErrorCode::GeoipTimeout),
+        "GEOIP_FAILURE" => (Code::Internal, ErrorCode::GeoipFailure),
+
         _ => (Code::Internal, ErrorCode::Unknown),
     }
 }

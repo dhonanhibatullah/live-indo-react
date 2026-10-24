@@ -1204,6 +1204,35 @@ pub mod geographic_region_service_client {
             self.inner = self.inner.max_encoding_message_size(limit);
             self
         }
+        pub async fn get_region_by_ip(
+            &mut self,
+            request: impl tonic::IntoRequest<super::GetRegionByIpRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::GetRegionByIpResponse>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::unknown(
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic_prost::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/live_indo_react.master.v1.GeographicRegionService/GetRegionByIp",
+            );
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(
+                    GrpcMethod::new(
+                        "live_indo_react.master.v1.GeographicRegionService",
+                        "GetRegionByIp",
+                    ),
+                );
+            self.inner.unary(req, path, codec).await
+        }
         pub async fn get_region_by_coord(
             &mut self,
             request: impl tonic::IntoRequest<super::GetRegionByCoordRequest>,
@@ -1248,6 +1277,13 @@ pub mod geographic_region_service_server {
     /// Generated trait containing gRPC methods that should be implemented for use with GeographicRegionServiceServer.
     #[async_trait]
     pub trait GeographicRegionService: std::marker::Send + std::marker::Sync + 'static {
+        async fn get_region_by_ip(
+            &self,
+            request: tonic::Request<super::GetRegionByIpRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::GetRegionByIpResponse>,
+            tonic::Status,
+        >;
         async fn get_region_by_coord(
             &self,
             request: tonic::Request<super::GetRegionByCoordRequest>,
@@ -1333,6 +1369,55 @@ pub mod geographic_region_service_server {
         }
         fn call(&mut self, req: http::Request<B>) -> Self::Future {
             match req.uri().path() {
+                "/live_indo_react.master.v1.GeographicRegionService/GetRegionByIp" => {
+                    #[allow(non_camel_case_types)]
+                    struct GetRegionByIpSvc<T: GeographicRegionService>(pub Arc<T>);
+                    impl<
+                        T: GeographicRegionService,
+                    > tonic::server::UnaryService<super::GetRegionByIpRequest>
+                    for GetRegionByIpSvc<T> {
+                        type Response = super::GetRegionByIpResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::GetRegionByIpRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as GeographicRegionService>::get_region_by_ip(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = GetRegionByIpSvc(inner);
+                        let codec = tonic_prost::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
                 "/live_indo_react.master.v1.GeographicRegionService/GetRegionByCoord" => {
                     #[allow(non_camel_case_types)]
                     struct GetRegionByCoordSvc<T: GeographicRegionService>(pub Arc<T>);

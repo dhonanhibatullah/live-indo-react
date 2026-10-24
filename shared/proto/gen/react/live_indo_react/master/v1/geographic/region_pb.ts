@@ -4,7 +4,7 @@
 
 import type { GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
 import { fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
-import type { Region } from "../common/models_pb";
+import type { GeoIp, Region } from "../common/models_pb";
 import { file_live_indo_react_master_v1_common_models } from "../common/models_pb";
 import type { Message } from "@bufbuild/protobuf";
 
@@ -12,7 +12,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file live_indo_react/master/v1/geographic/region.proto.
  */
 export const file_live_indo_react_master_v1_geographic_region: GenFile = /*@__PURE__*/
-  fileDesc("CjFsaXZlX2luZG9fcmVhY3QvbWFzdGVyL3YxL2dlb2dyYXBoaWMvcmVnaW9uLnByb3RvEhlsaXZlX2luZG9fcmVhY3QubWFzdGVyLnYxIj4KF0dldFJlZ2lvbkJ5Q29vcmRSZXF1ZXN0EhEKCWxvbmdpdHVkZRgBIAEoARIQCghsYXRpdHVkZRgCIAEoASJNChhHZXRSZWdpb25CeUNvb3JkUmVzcG9uc2USMQoGcmVnaW9uGAEgASgLMiEubGl2ZV9pbmRvX3JlYWN0Lm1hc3Rlci52MS5SZWdpb24ylgEKF0dlb2dyYXBoaWNSZWdpb25TZXJ2aWNlEnsKEEdldFJlZ2lvbkJ5Q29vcmQSMi5saXZlX2luZG9fcmVhY3QubWFzdGVyLnYxLkdldFJlZ2lvbkJ5Q29vcmRSZXF1ZXN0GjMubGl2ZV9pbmRvX3JlYWN0Lm1hc3Rlci52MS5HZXRSZWdpb25CeUNvb3JkUmVzcG9uc2ViBnByb3RvMw", [file_live_indo_react_master_v1_common_models]);
+  fileDesc("CjFsaXZlX2luZG9fcmVhY3QvbWFzdGVyL3YxL2dlb2dyYXBoaWMvcmVnaW9uLnByb3RvEhlsaXZlX2luZG9fcmVhY3QubWFzdGVyLnYxIj4KF0dldFJlZ2lvbkJ5Q29vcmRSZXF1ZXN0EhEKCWxvbmdpdHVkZRgBIAEoARIQCghsYXRpdHVkZRgCIAEoASJNChhHZXRSZWdpb25CeUNvb3JkUmVzcG9uc2USMQoGcmVnaW9uGAEgASgLMiEubGl2ZV9pbmRvX3JlYWN0Lm1hc3Rlci52MS5SZWdpb24iIgoUR2V0UmVnaW9uQnlJcFJlcXVlc3QSCgoCaXAYASABKAkiewoVR2V0UmVnaW9uQnlJcFJlc3BvbnNlEi8KBWdlb2lwGAEgASgLMiAubGl2ZV9pbmRvX3JlYWN0Lm1hc3Rlci52MS5HZW9JcBIxCgZyZWdpb24YAiABKAsyIS5saXZlX2luZG9fcmVhY3QubWFzdGVyLnYxLlJlZ2lvbjKKAgoXR2VvZ3JhcGhpY1JlZ2lvblNlcnZpY2UScgoNR2V0UmVnaW9uQnlJcBIvLmxpdmVfaW5kb19yZWFjdC5tYXN0ZXIudjEuR2V0UmVnaW9uQnlJcFJlcXVlc3QaMC5saXZlX2luZG9fcmVhY3QubWFzdGVyLnYxLkdldFJlZ2lvbkJ5SXBSZXNwb25zZRJ7ChBHZXRSZWdpb25CeUNvb3JkEjIubGl2ZV9pbmRvX3JlYWN0Lm1hc3Rlci52MS5HZXRSZWdpb25CeUNvb3JkUmVxdWVzdBozLmxpdmVfaW5kb19yZWFjdC5tYXN0ZXIudjEuR2V0UmVnaW9uQnlDb29yZFJlc3BvbnNlYgZwcm90bzM", [file_live_indo_react_master_v1_common_models]);
 
 /**
  * @generated from message live_indo_react.master.v1.GetRegionByCoordRequest
@@ -54,9 +54,58 @@ export const GetRegionByCoordResponseSchema: GenMessage<GetRegionByCoordResponse
   messageDesc(file_live_indo_react_master_v1_geographic_region, 1);
 
 /**
+ * An explicit lookup address, not caller identity or forwarded-header metadata.
+ *
+ * @generated from message live_indo_react.master.v1.GetRegionByIpRequest
+ */
+export type GetRegionByIpRequest = Message<"live_indo_react.master.v1.GetRegionByIpRequest"> & {
+  /**
+   * @generated from field: string ip = 1;
+   */
+  ip: string;
+};
+
+/**
+ * Describes the message live_indo_react.master.v1.GetRegionByIpRequest.
+ * Use `create(GetRegionByIpRequestSchema)` to create a new message.
+ */
+export const GetRegionByIpRequestSchema: GenMessage<GetRegionByIpRequest> = /*@__PURE__*/
+  messageDesc(file_live_indo_react_master_v1_geographic_region, 2);
+
+/**
+ * @generated from message live_indo_react.master.v1.GetRegionByIpResponse
+ */
+export type GetRegionByIpResponse = Message<"live_indo_react.master.v1.GetRegionByIpResponse"> & {
+  /**
+   * @generated from field: live_indo_react.master.v1.GeoIp geoip = 1;
+   */
+  geoip?: GeoIp | undefined;
+
+  /**
+   * @generated from field: live_indo_react.master.v1.Region region = 2;
+   */
+  region?: Region | undefined;
+};
+
+/**
+ * Describes the message live_indo_react.master.v1.GetRegionByIpResponse.
+ * Use `create(GetRegionByIpResponseSchema)` to create a new message.
+ */
+export const GetRegionByIpResponseSchema: GenMessage<GetRegionByIpResponse> = /*@__PURE__*/
+  messageDesc(file_live_indo_react_master_v1_geographic_region, 3);
+
+/**
  * @generated from service live_indo_react.master.v1.GeographicRegionService
  */
 export const GeographicRegionService: GenService<{
+  /**
+   * @generated from rpc live_indo_react.master.v1.GeographicRegionService.GetRegionByIp
+   */
+  getRegionByIp: {
+    methodKind: "unary";
+    input: typeof GetRegionByIpRequestSchema;
+    output: typeof GetRegionByIpResponseSchema;
+  },
   /**
    * @generated from rpc live_indo_react.master.v1.GeographicRegionService.GetRegionByCoord
    */

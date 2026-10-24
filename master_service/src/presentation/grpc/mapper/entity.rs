@@ -1,7 +1,7 @@
 use live_indo_proto::live_indo_react::master::v1 as proto;
 
 use crate::domain::{
-    models::entity::{City, CityKind, IndonesiaBoundary, PollingMethod, Province, Topic},
+    models::entity::{City, CityKind, GeoIp, IndonesiaBoundary, PollingMethod, Province, Topic},
     usecases::geographic::Region,
 };
 
@@ -83,5 +83,29 @@ fn city_kind(value: CityKind) -> proto::CityKind {
     match value {
         CityKind::City => proto::CityKind::City,
         CityKind::Regency => proto::CityKind::Regency,
+    }
+}
+
+pub(crate) fn geoip(value: GeoIp) -> proto::GeoIp {
+    proto::GeoIp {
+        continent_code: value.continent_code,
+        country_code: value.country_code,
+        country_name: value.country_name,
+        subdivisions: value
+            .subdivisions
+            .into_iter()
+            .map(|subdivision| proto::GeoIpSubdivision {
+                code: subdivision.code,
+                name: subdivision.name,
+            })
+            .collect(),
+        city_name: value.city_name,
+        postal_code: value.postal_code,
+        coordinates: value.coordinates.map(|coordinate| proto::Coordinate {
+            longitude: coordinate.longitude,
+            latitude: coordinate.latitude,
+        }),
+        accuracy_radius_km: value.accuracy_radius_km.map(u32::from),
+        time_zone: value.time_zone,
     }
 }

@@ -23,8 +23,8 @@ application implementations, gRPC plus Axum HTTP presentation adapters, typed
 environment loading, and composition/runtime lifecycle wiring. Master-service
 GeoIP models/contracts, an HTTPS download/local MMDB adapter and a maintenance
 refresh usecase/application also exist;
-GeoIP startup readiness initialization and daily cron refresh are available; GeoIP HTTP/gRPC
-exposure remains deferred. Cron uses application/infrastructure logging only.
+GeoIP startup readiness initialization, daily cron refresh and IP-region lookup
+over HTTP/gRPC are available. Cron uses application/infrastructure logging only.
 `shared/` is a separate Rust workspace for explicitly shared libraries; its `pgdt`
 crate provides context-aware PostgreSQL execution and transaction orchestration
 for the master repository adapters. `shared/proto/` contains the master-service

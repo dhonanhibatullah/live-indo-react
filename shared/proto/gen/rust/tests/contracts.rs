@@ -99,3 +99,38 @@ fn generated_service_types_are_available() {
     management(None);
     topic(None);
 }
+
+#[test]
+fn ip_region_response_preserves_absent_and_present_zero_location_values() {
+    let absent = GetRegionByIpResponse {
+        geoip: None,
+        region: None,
+    };
+    let decoded = GetRegionByIpResponse::decode(absent.encode_to_vec().as_slice()).unwrap();
+    assert!(decoded.geoip.is_none());
+    assert!(decoded.region.is_none());
+    let present = GetRegionByIpResponse {
+        geoip: Some(GeoIp {
+            continent_code: None,
+            country_code: Some(String::new()),
+            country_name: None,
+            subdivisions: vec![GeoIpSubdivision {
+                code: None,
+                name: None,
+            }],
+            city_name: None,
+            postal_code: None,
+            coordinates: Some(Coordinate {
+                longitude: 0.0,
+                latitude: 0.0,
+            }),
+            accuracy_radius_km: Some(0),
+            time_zone: None,
+        }),
+        region: None,
+    };
+    let decoded = GetRegionByIpResponse::decode(present.encode_to_vec().as_slice()).unwrap();
+    assert_eq!(decoded, present);
+    assert_eq!(ErrorCode::GeoipNotReady as i32, 35);
+    assert_eq!(ErrorCode::CityProvinceNotFound as i32, 33);
+}

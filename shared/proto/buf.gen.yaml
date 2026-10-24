@@ -4,11 +4,7 @@ plugins:
     out: gen/rust/src
   - remote: buf.build/community/neoeinstein-tonic
     out: gen/rust/src
-  - remote: buf.build/bufbuild/es
-    out: gen/react
-    opt:
-      - target=ts
-  - remote: buf.build/connectrpc/es
+  - remote: buf.build/bufbuild/es:v2.16.0
     out: gen/react
     opt:
       - target=ts

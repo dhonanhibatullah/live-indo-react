@@ -83,3 +83,23 @@ message Region {
   Province province = 1;
   City city = 2;
 }
+
+// Provider subdivision codes are not canonical Kemendagri codes.
+message GeoIpSubdivision {
+  optional string code = 1;
+  optional string name = 2;
+}
+
+// Estimated location; absent values remain absent rather than zero or empty.
+// Coordinates are approximate provider data, not user-supplied GPS coordinates.
+message GeoIp {
+  optional string continent_code = 1;
+  optional string country_code = 2;
+  optional string country_name = 3;
+  repeated GeoIpSubdivision subdivisions = 4;
+  optional string city_name = 5;
+  optional string postal_code = 6;
+  Coordinate coordinates = 7;
+  optional uint32 accuracy_radius_km = 8;
+  optional string time_zone = 9;
+}

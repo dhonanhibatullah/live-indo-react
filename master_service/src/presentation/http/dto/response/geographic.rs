@@ -11,3 +11,9 @@ pub struct RegionLookupResponse {
 pub struct InsideResponse {
     pub inside: bool,
 }
+
+#[derive(Clone, Serialize)]
+pub struct RegionByIpResponse {
+    pub geoip: Option<super::model::GeoIpResponse>,
+    pub region: Option<RegionResponse>,
+}

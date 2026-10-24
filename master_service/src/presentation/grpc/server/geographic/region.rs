@@ -24,6 +24,27 @@ impl RegionServer {
 
 #[tonic::async_trait]
 impl GeographicRegionService for RegionServer {
+    async fn get_region_by_ip(
+        &self,
+        request: Request<proto::GetRegionByIpRequest>,
+    ) -> Result<Response<proto::GetRegionByIpResponse>, Status> {
+        let context = app_context(&request)?;
+        let ip = request
+            .into_inner()
+            .ip
+            .parse()
+            .map_err(|_| error::bad_args("ip must be an IPv4 or IPv6 address"))?;
+        let result = self
+            .usecase
+            .get_region_by_ip(&context, ip)
+            .await
+            .map_err(error::usecase)?;
+        Ok(Response::new(proto::GetRegionByIpResponse {
+            geoip: result.geoip.map(entity::geoip),
+            region: result.region.map(entity::region),
+        }))
+    }
+
     async fn get_region_by_coord(
         &self,
         request: Request<proto::GetRegionByCoordRequest>,

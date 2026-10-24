@@ -35,6 +35,23 @@ Default listeners:
 Every request needs an `x-trace-id` metadata header containing a non-zero UUID.
 `x-actor` is optional correlation metadata, not authentication.
 
+## Region lookup by IP
+
+HTTP: `GET /v1/regions/by-ip?ip=203.0.113.1` (IPv4 or IPv6).
+The same operation is available as gRPC GeographicRegionService.GetRegionByIp
+with an `ip` string. Supply the existing `x-trace-id` metadata header.
+
+The response contains `geoip` (provider estimate) and `region` (our canonical
+province/city entities). Either can be absent; HTTP represents absence as null.
+No record is a successful empty result. A country estimate may remain available
+without coordinates or a region match. Provider subdivisions are not Kemendagri
+codes, and approximate coordinates are not proof of physical presence.
+
+Malformed input returns HTTP 400 / gRPC InvalidArgument. GeoIP unavailability or
+not-ready status returns HTTP 503 / gRPC Unavailable; timeout returns HTTP 504 /
+gRPC DeadlineExceeded. Other GeoIP operational failures return HTTP 500 / gRPC
+Internal. Responses never echo the target IP or native provider errors.
+
 ## Daily GeoIP refresh
 
 The launcher wires driver -> infrastructure -> application -> presentation.

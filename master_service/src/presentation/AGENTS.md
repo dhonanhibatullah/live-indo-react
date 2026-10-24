@@ -94,3 +94,26 @@ Context creation uses the CreateAppContext usecase; no utility contract is calle
 from presentation. There are no job-level logs; application/infrastructure own
 operation logs. Composition starts the runner after both listeners bind and owns
 its bounded shutdown alongside HTTP/gRPC.
+
+## Region lookup by IP
+
+GeographicRegionService.GetRegionByIp and GET `/v1/regions/by-ip?ip=...` parse an
+explicit IPv4/IPv6 lookup IP into IpAddr and call GetRegion.get_region_by_ip.
+They do not infer client IP, trust forwarding headers, perform GeoIP lookups or
+resolve boundaries themselves. Keep existing request context requirements.
+Reject malformed/missing IPs before the usecase and never echo input in errors.
+HTTP query DTOs reject unknown and duplicate fields.
+
+Map RegionByIp into explicit wire DTOs/proto messages: nullable `geoip` and
+`region`. Preserve estimate data when region/coordinates are missing, and return
+a successful empty lookup when both are absent. Coordinate estimates are GeoIP
+provider data, not stored user-coordinate metadata. Provider subdivisions remain
+separate from canonical Kemendagri identifiers. Do not return or log the lookup IP.
+The existing coordinate lookup remains unchanged.
+
+Map all GeoIpError codes explicitly: not-ready/unavailable -> HTTP 503/gRPC
+Unavailable; timeout -> HTTP 504/gRPC DeadlineExceeded; configuration, invalid
+database/download and operation failure -> HTTP 500/gRPC Internal. Preserve stable
+codes in JSON/typed gRPC error details, mask HTTP 500 messages and never expose
+native sources. Shared proto changes require regenerated Rust/TypeScript output.
+Transport tests use fake GetRegion usecases, including generated-client gRPC calls.

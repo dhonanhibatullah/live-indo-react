@@ -130,6 +130,12 @@ fn classify(code: &str) -> (StatusCode, &str) {
         | "PROVINCE_KEMENDAGRI_CODE_CONFLICT"
         | "CITY_KEMENDAGRI_CODE_CONFLICT" => (StatusCode::CONFLICT, code),
 
+        "GEOIP_NOT_READY" | "GEOIP_UNAVAILABLE" => (StatusCode::SERVICE_UNAVAILABLE, code),
+        "GEOIP_TIMEOUT" => (StatusCode::GATEWAY_TIMEOUT, code),
+        "GEOIP_CONFIGURATION_INVALID"
+        | "GEOIP_DATABASE_INVALID"
+        | "GEOIP_DOWNLOAD_INVALID"
+        | "GEOIP_FAILURE" => (StatusCode::INTERNAL_SERVER_ERROR, code),
         "BAD_STATE" => (StatusCode::PRECONDITION_FAILED, code),
         "TIMEOUT" => (StatusCode::GATEWAY_TIMEOUT, code),
         "UNIMPLEMENTED" => (StatusCode::NOT_IMPLEMENTED, code),

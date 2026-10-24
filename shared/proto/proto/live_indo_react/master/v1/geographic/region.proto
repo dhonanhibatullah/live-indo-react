@@ -5,6 +5,7 @@ package live_indo_react.master.v1;
 import "live_indo_react/master/v1/common/models.proto";
 
 service GeographicRegionService {
+  rpc GetRegionByIp(GetRegionByIpRequest) returns (GetRegionByIpResponse);
   rpc GetRegionByCoord(GetRegionByCoordRequest) returns (GetRegionByCoordResponse);
 }
 
@@ -15,4 +16,14 @@ message GetRegionByCoordRequest {
 
 message GetRegionByCoordResponse {
   live_indo_react.master.v1.Region region = 1;
+}
+
+// An explicit lookup address, not caller identity or forwarded-header metadata.
+message GetRegionByIpRequest {
+  string ip = 1;
+}
+
+message GetRegionByIpResponse {
+  GeoIp geoip = 1;
+  Region region = 2;
 }

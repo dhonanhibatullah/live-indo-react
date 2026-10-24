@@ -129,8 +129,9 @@ invokes the existing maintenance usecase once and verifies readiness before
 starting listeners or cron. A missing/invalid MMDB is repaired then; refresh
 failure or a ten-minute initialization timeout fails startup. GeoIP values and
 classified errors live in domain; archive/file/MMDB and HTTP handling live under
-`infrastructure/service/geoip/`. Cron refresh is wired into composition; no
-GeoIP/IP-region HTTP or gRPC endpoint is added.
+`infrastructure/service/geoip/`. Cron refresh is wired into composition. IP-region
+lookup is exposed through GeographicRegionService.GetRegionByIp and HTTP
+GET `/v1/regions/by-ip?ip=...`, preserving the estimate and optional region.
 See the [adapter guide](src/infrastructure/service/AGENTS.md) for construction,
 size/concurrency limits, cancellation and single-writer assumptions.
 
